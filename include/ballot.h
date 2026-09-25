@@ -51,6 +51,7 @@ int tv_verify_ballot(const tv_pub *pub, const tv_ballot *b);
  * outputs the share m_k (L polys) and r_k. Returns 1 if the opening is valid. */
 int tv_check_share(const tv_pub *pub, const tv_akey *key, int k, const tv_ballot *b, poly *m_k, int64_t *r_k);
 double tv_beta(const tv_params *p);
+uint64_t tv_beta2(const tv_params *p);   /* beta^2 = 4 sigma^2 N mu (sigma = 1), the exact check */
 
 /* derive r = SampleD_sigma(X(par, id, k, seed)) */
 void tv_rand_from_seed(int64_t *r, const tv_pub *pub, uint64_t id, int k, const uint8_t seed[32]);

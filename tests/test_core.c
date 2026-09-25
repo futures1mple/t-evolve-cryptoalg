@@ -203,6 +203,30 @@ static void test_gauss_plans(void) {
     }
 }
 
+/* exact Bernoulli(exp(-num/den)) and the rejection rule: frequencies against exp(-g) (binomial, 5 sd) */
+static void test_bern_exp(void) {
+    uint8_t seed[32] = {5};
+    prg p;
+    prg_init(&p, 4, seed, 32);
+    const long long nd[][2] = {{0, 1}, {3, 10}, {1, 1}, {27, 10}, {5, 1}, {1234567, 1000000}};
+    for (unsigned i = 0; i < sizeof nd / sizeof *nd; i++) {
+        long n = 400000, c = 0;
+        for (long j = 0; j < n; j++) c += bern_exp(&p, nd[i][0], nd[i][1]);
+        double pe = exp(-(double)nd[i][0] / nd[i][1]), sd = sqrt(n * pe * (1 - pe)) + 1e-9;
+        printf("  bern_exp g=%g: %.5f (exp(-g) = %.5f)\n", (double)nd[i][0] / nd[i][1], (double)c / n, pe);
+        CHECK(fabs(c - n * pe) <= 5 * sd + 1, "bern_exp frequency g=%g", (double)nd[i][0] / nd[i][1]);
+    }
+    /* reject_accept: accept w.p. min(1, exp((ss - 2 zs)/(2 s2) - cn/cd)) */
+    long n = 400000, c = 0;
+    for (long j = 0; j < n; j++) c += reject_accept(&p, 30, 20, 50, 265, 242);   /* (20-60)/100 - 265/242 */
+    double pe = exp(-0.4 - 265.0 / 242.0), sd = sqrt(n * pe * (1 - pe));
+    printf("  reject_accept: %.5f (expected %.5f)\n", (double)c / n, pe);
+    CHECK(fabs(c - n * pe) <= 5 * sd + 1, "reject_accept frequency");
+    c = 0;
+    for (long j = 0; j < 1000; j++) c += reject_accept(&p, -1000, 0, 50, 265, 242);   /* R < 0: always accept */
+    CHECK(c == 1000, "reject_accept with R < 0");
+}
+
 /* known answer for seed-derived commitment randomness: must be identical on every platform,
    because the authority re-derives the voter's randomness from the seed */
 static void test_seed_kat(void) {
@@ -230,6 +254,7 @@ int main(void) {
     test_ring(562949953422097ULL);      /* 2^49 + 785 */
     test_challenges();
     test_seed_kat();
+    test_bern_exp();
     test_gauss_plans();
     test_gauss(1.0, 4000000);
     test_gauss(256.0, 2000000);

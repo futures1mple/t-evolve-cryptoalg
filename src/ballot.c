@@ -24,6 +24,7 @@ void tv_secret_alloc(tv_voter_secret *s, const tv_params *p) {
 void tv_secret_free(tv_voter_secret *s) { free(s->m); free(s->r); free(s->seeds); }
 
 double tv_beta(const tv_params *p) { return 2.0 * p->sigma * sqrt((double)VN(p)); }
+uint64_t tv_beta2(const tv_params *p) { return 4 * (uint64_t)VN(p); }      /* beta^2 for sigma = 1 */
 
 /* r = SampleD_sigma(X(par, id, k, s)): the input is domain-separated by the parameters, the voter
    identity and the authority index, so that a seed reused in several ballots or shares yields
@@ -149,10 +150,10 @@ static void parity_first(poly *v, const tv_pub *pub, const poly *xh) {
     free(comb);
 }
 
-static double sqnorm(const int64_t *x, size_t n) {
-    long double s = 0;
-    for (size_t i = 0; i < n; i++) s += (long double)x[i] * (long double)x[i];
-    return (double)s;
+static i128 sqnorm(const int64_t *x, size_t n) {      /* exact */
+    i128 s = 0;
+    for (size_t i = 0; i < n; i++) s += (i128)x[i] * x[i];
+    return s;
 }
 
 int tv_vote(tv_ballot *b, tv_voter_secret *sec, tv_prove_stats *stats, const tv_pub *pub,
@@ -243,22 +244,20 @@ int tv_vote(tv_ballot *b, tv_voter_secret *sec, tv_prove_stats *stats, const tv_
             for (size_t i = 0; i < vn; i++) zall[nz + (size_t)a * vn + i] = rho[(size_t)a * vn + i] + sh[i];
         }
         /* single rejection step on all witness-dependent responses */
-        long double zv = 0, vv = 0;
-        for (size_t i = 0; i < nwit; i++) { zv += (long double)zall[i] * shift[i]; vv += (long double)shift[i] * shift[i]; }
-        double ratio = sqrt((double)vv) / p->T;
+        i128 zv = 0, vv = 0;                      /* exact integers */
+        for (size_t i = 0; i < nwit; i++) { zv += (i128)zall[i] * shift[i]; vv += (i128)shift[i] * shift[i]; }
+        double ratio = sqrt((double)vv) / p->T;   /* statistics only */
         if (ratio > max_ratio) max_ratio = ratio;
-        double lhs = (double)((-2.0L * zv + vv) / (2.0L * (long double)p->sigma_J * p->sigma_J)) - p->logM;
-        double u = prg_unif(&g);
-        if (log(u) > lhs) continue;
+        if (!reject_accept(&g, zv, vv, p->sigma_J2, p->logM_num, p->logM_den)) continue;
         /* assemble and check the norm bound (fails only with negligible probability) */
         memcpy(b->z, zall, sizeof(int64_t) * nz);
         for (int a = 0; a < L; a++) {
             int m = v[a];
             memcpy(b->or_r + ((size_t)a * 2 + m) * vn, zall + nz + (size_t)a * vn, sizeof(int64_t) * vn);
         }
-        double nrm2 = sqnorm(b->z, nz) + sqnorm(b->or_r, (size_t)L * 2 * vn);
-        if (nrm2 > p->B_J * p->B_J) continue;
-        if (stats) { stats->attempts = attempts; stats->max_shift_ratio = max_ratio; stats->resp_norm = sqrt(nrm2); }
+        i128 nrm2 = sqnorm(b->z, nz) + sqnorm(b->or_r, (size_t)L * 2 * vn);
+        if (nrm2 > (i128)p->B_J2) continue;
+        if (stats) { stats->attempts = attempts; stats->max_shift_ratio = max_ratio; stats->resp_norm = sqrt((double)nrm2); }
         break;
     }
     fm_free(&fm);
@@ -273,8 +272,8 @@ int tv_verify_ballot(const tv_pub *pub, const tv_ballot *b) {
     int n = p->n, L = p->L, d = p->d, mu = p->mu, rows = p->rows;
     size_t vn = VN(p), nz = (size_t)(n + 1) * vn;
     /* norm bound */
-    double nrm2 = sqnorm(b->z, nz) + sqnorm(b->or_r, (size_t)L * 2 * vn);
-    if (!(nrm2 <= p->B_J * p->B_J)) return 0;
+    i128 nrm2 = sqnorm(b->z, nz) + sqnorm(b->or_r, (size_t)L * 2 * vn);
+    if (nrm2 > (i128)p->B_J2) return 0;
     challenge c;
     perm_ch *pi = malloc(sizeof(perm_ch) * L);
     expand_challenges(&c, pi, L, b->chat);
@@ -342,7 +341,7 @@ int tv_check_share(const tv_pub *pub, const tv_akey *key, int k, const tv_ballot
     uint8_t seed[32];
     pke_stub(seed, key, b->id, b->e + (size_t)(k - 1) * TV_CT_BYTES);
     tv_rand_from_seed(r_k, pub, b->id, k, seed);
-    if (sqrt(sqnorm(r_k, VN(p))) > tv_beta(p)) return 0;
+    if (sqnorm(r_k, VN(p)) > (i128)tv_beta2(p)) return 0;
     poly *cr = malloc(sizeof(poly) * p->rows);
     poly *rh = malloc(sizeof(poly) * p->mu);
     vec_ntt_from_int(rh, r_k, p->mu);

@@ -11,8 +11,10 @@ void ev_params_init(ev_params *ep, const tv_params *p) {
     double tr = 60.0 * TV_N * p->mu * p->n, lam = 3600.0 * p->n, tau = p->tau_bits * log(2.0);
     ep->T = p->sigma * sqrt(tr + 2.0 * sqrt(tr * lam * tau) + 2.0 * lam * tau);
     ep->sigma_OR = gauss_round_sigma(p->alpha * ep->T);
-    ep->logM = p->logM;
+    ep->sigma_OR2 = gauss_sigma2(ep->sigma_OR);
+    ep->logM = p->logM; ep->logM_num = p->logM_num; ep->logM_den = p->logM_den;
     ep->B_OR = 2.0 * ep->sigma_OR * sqrt(2.0 * (double)VN(p));
+    ep->B_OR2 = 4 * ep->sigma_OR2 * 2 * (uint64_t)VN(p);
 }
 
 void ev_ballot_alloc(ev_ballot *b, const tv_params *p) {
@@ -139,13 +141,12 @@ int ev_vote(ev_ballot *b, poly *shares, int64_t *rnd, int *attempts, const tv_pu
         if (m == 1) { b->f0 = fs; perm_apply(&fm, &pi, &fs); }
         else { perm_apply_inv(&fm, &pi, &fs); b->f0 = fm; }
         ch_mul_int(sh, &fm, r, (size_t)p->mu);
-        long double zv = 0, vv = 0;
-        for (size_t i = 0; i < vn; i++) { rm[i] = rho[i] + sh[i]; zv += (long double)rm[i] * sh[i]; vv += (long double)sh[i] * sh[i]; }
-        double lhs = (double)((-2.0L * zv + vv) / (2.0L * (long double)ep->sigma_OR * ep->sigma_OR)) - ep->logM;
-        if (log(prg_unif(&g)) > lhs) continue;
-        long double n2 = 0;
-        for (size_t i = 0; i < vn; i++) n2 += (long double)b->r0[i] * b->r0[i] + (long double)b->r1[i] * b->r1[i];
-        if (sqrtl(n2) > ep->B_OR) continue;
+        i128 zv = 0, vv = 0;
+        for (size_t i = 0; i < vn; i++) { rm[i] = rho[i] + sh[i]; zv += (i128)rm[i] * sh[i]; vv += (i128)sh[i] * sh[i]; }
+        if (!reject_accept(&g, zv, vv, ep->sigma_OR2, ep->logM_num, ep->logM_den)) continue;
+        i128 n2 = 0;
+        for (size_t i = 0; i < vn; i++) n2 += (i128)b->r0[i] * b->r0[i] + (i128)b->r1[i] * b->r1[i];
+        if (n2 > (i128)ep->B_OR2) continue;
         break;
     }
     if (attempts) *attempts = att;
@@ -157,9 +158,9 @@ int ev_vote(ev_ballot *b, poly *shares, int64_t *rnd, int *attempts, const tv_pu
 int ev_verify(const tv_pub *pub, const ev_params *ep, const ev_ballot *b) {
     const tv_params *p = &pub->prm;
     size_t vn = VN(p);
-    long double n2 = 0;
-    for (size_t i = 0; i < vn; i++) n2 += (long double)b->r0[i] * b->r0[i] + (long double)b->r1[i] * b->r1[i];
-    if (!(sqrtl(n2) <= ep->B_OR)) return 0;
+    i128 n2 = 0;
+    for (size_t i = 0; i < vn; i++) n2 += (i128)b->r0[i] * b->r0[i] + (i128)b->r1[i] * b->r1[i];
+    if (n2 > (i128)ep->B_OR2) return 0;
     int rows = p->rows;
     poly *c = malloc(sizeof(poly) * rows), *t0 = malloc(sizeof(poly) * rows), *t1 = malloc(sizeof(poly) * rows);
     sum_com(c, p, b->c);

@@ -72,8 +72,9 @@ void agg_params_init(agg_params *ap, const tv_params *p, long nleaves, c2_mode m
     memset(ap, 0, sizeof *ap);
     ap->fanin = p->fanin; ap->k = p->k_blk; ap->ell = p->ell; ap->kappa = p->kappa;
     ap->mode = mode;
-    ap->alpha = 12.0 / log(sqrt(3.0));
-    ap->logM = 12.0 / ap->alpha + 1.0 / (2.0 * ap->alpha * ap->alpha);
+    ap->alpha = 437.0 / 20.0;                 /* rational, close to 12/ln(sqrt 3), so that ln M' is rational */
+    ap->logM_num = 105080; ap->logM_den = 190969;   /* 12/alpha' + 1/(2 alpha'^2) = 240/437 + 200/190969 */
+    ap->logM = (double)ap->logM_num / (double)ap->logM_den;
     ap->zinf_mult = 9.0;
     ap->logQ = logQ;
     ap->tau = (128.0 + 40.0) * log(2.0);
@@ -91,9 +92,15 @@ void agg_params_init(agg_params *ap, const tv_params *p, long nleaves, c2_mode m
         double Fe = 0;
         for (int i = 0; i < blk[e].count; i++) {
             int u = blk[e].first + i;
-            double v, g;                                   /* variance multiplicity, grindable summands */
-            if (!blk[e].zero) { v = 1; g = (u < t.nleaves) ? 1 : 0; }
-            else { v = 1 + t.nchild[u]; g = (blk[e].level == 1) ? t.nchild[u] : 0; }
+            /* class bounds, independent of the position of the column and of the number of accepted
+               ballots: every column of Pi_open counted as a leaf (v = 1, g = 1); a column of Pi_zero as a
+               node with the full fan-in (v = 1 + l, g = l at level 1, g = 0 above). The per-block sums are
+               then nondecreasing in the number of leaves, so the bounds computed for N_V cover every
+               tree with at most N_V leaves (docs/PARAMETERS.md, Section 3). */
+            double v, g;
+            (void)u;
+            if (!blk[e].zero) { v = 1; g = 1; }
+            else { v = 1 + ap->fanin; g = (blk[e].level == 1) ? ap->fanin : 0; }
             double tc = ap->tau + log(ncols) + g * lnQ;
             /* c1 = H_agg(par, BB_1) can be steered by the adversary among its queries: one more ln Q */
             T1sq += s2 * v * hkz(60.0 * Nmu, 3600.0, tc + lnQ);    /* ||c1 s_col||^2 */
@@ -111,6 +118,8 @@ void agg_params_init(agg_params *ap, const tv_params *p, long nleaves, c2_mode m
     else ap->T2 = sqrt(T2bin);
     ap->sigma1 = gauss_round_sigma(ap->alpha * ap->T1);   /* achievable sigma >= alpha T */
     ap->sigma2 = gauss_round_sigma(ap->alpha * ap->T2);
+    ap->sig1sq = gauss_sigma2(ap->sigma1);
+    ap->sig2sq = gauss_sigma2(ap->sigma2);
     free(blk);
     tree_free(&t);
 }
@@ -379,14 +388,16 @@ int agg_round2(agg_state *st, agg_contrib *out, agg_stats *stats, const tv_pub *
     int64_t *S = malloc(sizeof(int64_t) * vn * (size_t)ap->k), *B = malloc(sizeof(int64_t) * vn);
     int64_t *acc = malloc(sizeof(int64_t) * vn);
     int8_t *C2 = malloc((size_t)ap->k * ell);
-    double lim_row = 2.0 * ap->k * ap->sigma1 * ap->sigma1;
-    double lim_ent = ap->zinf_mult * ap->sigma2, lim_col = 2.0 * TV_N * ap->sigma2 * ap->sigma2;
-    double *rowsq = malloc(sizeof(double) * vn);
+    /* IsSmall with exact integer comparisons: rows of Z1 ||.||^2 <= 2 k sigma1^2, entries of Z2
+       z^2 <= 81 sigma2^2, ring components of columns of Z2 ||.||^2 <= 2 N sigma2^2 */
+    i128 lim_row = (i128)2 * ap->k * (i128)ap->sig1sq;
+    i128 lim_ent2 = (i128)81 * (i128)ap->sig2sq, lim_col = (i128)2 * TV_N * (i128)ap->sig2sq;
+    i128 *rowsq = malloc(sizeof(i128) * vn);
     double r1max = 0, r2max = 0;
     int found = -1, used = 0;
     for (int it = 0; it < ap->kappa && found < 0; it++) {
         used++;
-        long double zb1 = 0, bb1s = 0, zb2 = 0, bb2s = 0;
+        i128 zb1 = 0, bb1s = 0, zb2 = 0, bb2s = 0;          /* exact */
         int small = 1;
         for (int e = 0; e < E; e++) {
             const agg_block *b = &st->blocks[e];
@@ -401,10 +412,10 @@ int agg_round2(agg_state *st, agg_contrib *out, agg_stats *stats, const tv_pub *
                 ch_mul_int(B, &c1, s, (size_t)p->mu);
                 for (size_t r = 0; r < vn; r++) {
                     int64_t z = Y1[(size_t)i * vn + r] + B[r];
-                    zb1 += (long double)z * B[r];
-                    bb1s += (long double)B[r] * B[r];
+                    zb1 += (i128)z * B[r];
+                    bb1s += (i128)B[r] * B[r];
                     Z1[(size_t)i * vn + r] = (int64_t)z;
-                    rowsq[r] += (double)z * (double)z;
+                    rowsq[r] += (i128)z * z;
                 }
             }
             for (size_t r = 0; r < vn; r++) if (rowsq[r] > lim_row) small = 0;
@@ -421,14 +432,14 @@ int agg_round2(agg_state *st, agg_contrib *out, agg_stats *stats, const tv_pub *
                 }
                 for (size_t r = 0; r < vn; r++) {
                     int64_t z = Y2[(size_t)j * vn + r] + acc[r];
-                    zb2 += (long double)z * acc[r];
-                    bb2s += (long double)acc[r] * acc[r];
-                    if (fabs((double)z) > lim_ent) small = 0;
+                    zb2 += (i128)z * acc[r];
+                    bb2s += (i128)acc[r] * acc[r];
+                    if ((i128)z * z > lim_ent2) small = 0;
                     Z2[(size_t)j * vn + r] = (int64_t)z;
                 }
                 for (int pp = 0; pp < p->mu; pp++) {
-                    double cs = 0;
-                    for (int c = 0; c < TV_N; c++) { double z = Z2[(size_t)j * vn + (size_t)pp * TV_N + c]; cs += z * z; }
+                    i128 cs = 0;
+                    for (int c = 0; c < TV_N; c++) { int64_t z = Z2[(size_t)j * vn + (size_t)pp * TV_N + c]; cs += (i128)z * z; }
                     if (cs > lim_col) small = 0;
                 }
             }
@@ -436,9 +447,8 @@ int agg_round2(agg_state *st, agg_contrib *out, agg_stats *stats, const tv_pub *
         double r1 = sqrt((double)bb1s) / ap->T1, r2 = sqrt((double)bb2s) / ap->T2;
         if (r1 > r1max) r1max = r1;
         if (r2 > r2max) r2max = r2;
-        double l1 = (double)((-2.0L * zb1 + bb1s) / (2.0L * (long double)ap->sigma1 * ap->sigma1)) - ap->logM;
-        double l2 = (double)((-2.0L * zb2 + bb2s) / (2.0L * (long double)ap->sigma2 * ap->sigma2)) - ap->logM;
-        int u1 = log(prg_unif(&st->rng)) <= l1, u2 = log(prg_unif(&st->rng)) <= l2;
+        int u1 = reject_accept(&st->rng, zb1, bb1s, ap->sig1sq, ap->logM_num, ap->logM_den);
+        int u2 = reject_accept(&st->rng, zb2, bb2s, ap->sig2sq, ap->logM_num, ap->logM_den);
         if (u1 && u2 && small) found = it;
     }
     out->iota = found;
@@ -491,8 +501,8 @@ int agg_verify(const tv_pub *pub, const agg_params *ap, const agg_contrib *c, co
     int8_t *C2 = malloc((size_t)ap->k * ell);
     int64_t *col = malloc(sizeof(int64_t) * vn);
     int64_t *accq = malloc(sizeof(int64_t) * (size_t)rows * TV_N);
-    double lim_row = 2.0 * ap->k * ap->sigma1 * ap->sigma1;
-    double lim_ent = ap->zinf_mult * ap->sigma2, lim_col = 2.0 * TV_N * ap->sigma2 * ap->sigma2;
+    i128 lim_row = (i128)2 * ap->k * (i128)ap->sig1sq;
+    i128 lim_ent2 = (i128)81 * (i128)ap->sig2sq, lim_col = (i128)2 * TV_N * (i128)ap->sig2sq;
     for (int e = 0; e < E && ok; e++) {
         const agg_block *b = &blk[e];
         int mrows = b->zero ? rows : p->d;
@@ -500,17 +510,17 @@ int agg_verify(const tv_pub *pub, const agg_params *ap, const agg_contrib *c, co
         const int64_t *Z2 = c->Z2 + (size_t)e * vn * ell;
         /* IsSmall */
         for (size_t r = 0; r < vn && ok; r++) {
-            double s = 0;
-            for (int i = 0; i < b->count; i++) { double z = Z1[(size_t)i * vn + r]; s += z * z; }
+            i128 s = 0;
+            for (int i = 0; i < b->count; i++) { int64_t z = Z1[(size_t)i * vn + r]; s += (i128)z * z; }
             if (s > lim_row) ok = 0;
         }
         for (int j = 0; j < ell && ok; j++)
             for (int pp = 0; pp < p->mu; pp++) {
-                double cs = 0;
+                i128 cs = 0;
                 for (int q2 = 0; q2 < TV_N; q2++) {
-                    double z = Z2[(size_t)j * vn + (size_t)pp * TV_N + q2];
-                    if (fabs(z) > lim_ent) ok = 0;
-                    cs += z * z;
+                    int64_t z = Z2[(size_t)j * vn + (size_t)pp * TV_N + q2];
+                    if ((i128)z * z > lim_ent2) ok = 0;
+                    cs += (i128)z * z;
                 }
                 if (cs > lim_col) ok = 0;
             }
@@ -562,9 +572,9 @@ int agg_verify(const tv_pub *pub, const agg_params *ap, const agg_contrib *c, co
     }
     /* root opening */
     if (ok) {
-        double n2 = 0;
-        for (size_t i = 0; i < vn; i++) n2 += (double)c->rho_root[i] * (double)c->rho_root[i];
-        if (sqrt(n2) > tv_beta(p)) ok = 0;
+        i128 n2 = 0;
+        for (size_t i = 0; i < vn; i++) n2 += (i128)c->rho_root[i] * c->rho_root[i];
+        if (n2 > (i128)tv_beta2(p)) ok = 0;
         poly *cr = malloc(sizeof(poly) * rows);
         tv_commit(cr, pub, c->V, c->rho_root);
         if (memcmp(cr, com + (size_t)(t.nnodes - 1) * rows, sizeof(poly) * rows) != 0) ok = 0;

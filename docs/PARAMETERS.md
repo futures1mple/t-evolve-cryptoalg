@@ -40,7 +40,12 @@ blocks). Hence `||s|| <= T` except with probability `e^-tau`, with
 
     T^2 = sigma^2 (tr + 2 sqrt(3600 (1+L) tr tau) + 2 * 3600 (1+L) tau).
 
-**Rejection.** `sigma_J = 11 T`, `M = exp(12/11 + 1/242) = 2.989`. By [Lyubashevsky 2012,
+**Rejection.** `sigma_J` is the smallest value `>= 11 T` that the sampler produces (§5), and
+`M = exp(12/11 + 1/242) = 2.989`, i.e. `ln M = 265/242` exactly. The acceptance test is exact: with
+the integers `zs = <z, s>` and `ss = ||s||^2` (128-bit arithmetic) and the integer `sigma_J^2`, the
+response is accepted with probability `min(1, exp((ss - 2 zs) / (2 sigma_J^2) - 265/242))`, drawn by
+the algorithm of Canonne–Kamath–Steinke (Bernoulli(exp(-g)) for rational `g`, integer arithmetic
+only; `reject_accept` in `src/sample.c`). The only source of error is the PRG. By [Lyubashevsky 2012,
 Thm. 4.6/Lemma 4.7], conditioned on `||s|| <= T`, one attempt accepts with probability within
 `2^-100` of `1/M`, and the accepted responses are within statistical distance `2^-100/M` of
 `D_{sigma_J}` over the whole concatenation, independently of the witness. Without the condition
@@ -48,11 +53,12 @@ we add `e^-tau`. **Per attempt the simulation error is at most `2^-100 / M + 2^-
 enters `epsilon_zk` of the privacy theorem once per attempt of every honest ballot.
 
 Compared with the heuristic choice `sigma_J = 11 sqrt(60 N mu (n+1+L))` used before, `T` is
-larger by a factor 1.9–2.1 (about one bit), so the rigorous choice costs about 8% of the ballot
-size. The measured ratio `||s|| / T` never exceeded 0.57 in 5000 ballots
+larger by a factor 1.9–2.1 (about one bit), so the rigorous choice costs about 3% of the ballot
+(6% of the proof). The measured ratio `||s|| / T` never exceeded 0.55 in 10 000 ballots
 (`results/linux_cloud/ballot_rej_summary.csv`).
 
-**Response bound.** `B_J = 2 sigma_J sqrt(N mu (n + 1 + 2L))`; the concatenation of all
+**Response bound.** `B_J = 2 sigma_J sqrt(N mu (n + 1 + 2L))`, checked exactly as
+`||z||^2 <= B_J^2 = 4 sigma_J^2 N mu (n + 1 + 2L)` (an integer); the concatenation of all
 responses exceeds it with probability below `2^{-N mu (n+1+2L)/4}` [BL17, (18)]. Measured:
 `||responses|| / B_J <= 0.51`.
 
@@ -67,8 +73,9 @@ responses exceeds it with probability below `2^{-N mu (n+1+2L)/4}` [BL17, (18)].
 * `Pi_zero`, one column per inner node: `rho_u - sum_{children} r_child`, a sum of `1 + #children`
   independent vectors. A node's randomness appears in its own `Pi_open` column, its own `Pi_zero`
   column and its parent's `Pi_zero` column, so columns of different proofs and levels are
-  dependent; blocks of `Pi_zero` are formed within one level, so that columns inside a block of
-  `Pi_zero` are independent.
+  dependent; the bounds below need only per-column bounds.
+* Blocks: `Pi_open` takes all nodes (leaves first, then level by level) in consecutive blocks of
+  `k`; `Pi_zero` takes the inner nodes of each level in consecutive blocks of `k`.
 
 **Grinding.** A dishonest voter chooses its seeds and can try up to `Q = 2^64` of them. Every
 bound below that involves a leaf takes a union bound over these choices by adding `g ln Q` to
@@ -95,12 +102,27 @@ bound that holds for adversarial leaves has to go through `||S||_F s1(C2)` with
 where `b_col^2 = sigma^2 v hkz(N mu, 1, tau_col)` bounds the squared norm of one column. This holds
 for any alignment of the columns and needs only the per-column bounds.
 
-**Rejection.** `sigma_i = alpha T_i` with `alpha = 12 / ln sqrt(3)`, `M = exp(12/alpha + 1/(2 alpha^2))`
-for each of the two steps, applied once per attempt to the concatenation over all `E` blocks.
-An attempt succeeds with probability about `1/M^2 = 1/3`, independently of `E`; the simulation error
-per attempt is at most `2 * 2^-100 / M + 2 e^-tau`. The norm checks of every block (`IsSmall`)
-use: rows of `Z1` at most `sqrt(2k) sigma1`; entries of `Z2` at most `9 sigma2`; each ring
-component of each column of `Z2` at most `sqrt(2N) sigma2`.
+**Class bounds and smaller trees.** The parameters are chosen for `N_V`, a hard upper bound on the
+number of accepted ballots, while the adversary decides how many ballots are accepted. To make the
+bounds valid for every tree with at most `N_V` leaves, whatever its block layout, `T1` and `T2` are
+computed with one bound per class of columns: every column of `Pi_open` is counted as a leaf
+(`v = 1`, `g = 1`), every column of `Pi_zero` as a node with the full fan-in (`v = 1 + l`, with
+`g = l` at level 1 and `g = 0` above), and `tau_col` uses the number of columns of the tree for
+`N_V`. Every block then weighs (number of its columns) x (class bound), all blocks of a sequence are
+full except the last, and the number of nodes of every level is nondecreasing in the number of
+leaves; hence `F`, `sum_e F_e^2`, `max_e F_e` and `T1^2` are nondecreasing in the number of leaves,
+and the values for `N_V` bound those of every smaller tree. Compared with the exact per-column
+values this costs at most 0.003 bit in `sigma1`, `sigma2` and `beta_SIS`.
+
+**Rejection.** `sigma_i` is the smallest achievable value `>= alpha' T_i` with the rational
+`alpha' = 437/20 = 21.85` (close to `12 / ln sqrt(3) = 21.846`), and `M' = exp(12/alpha' + 1/(2 alpha'^2))`,
+`ln M' = 105080/190969` exactly (`M' = 1.7335`). Each of the two steps is applied once per attempt to
+the concatenation over all `E` blocks, with the exact test described for the ballot proof. An attempt
+succeeds with probability about `1/M'^2 = 0.333`, independently of `E`; the simulation error per
+attempt is at most `2 * 2^-100 / M' + (2l+1) e^-tau + eps_fresh` (Lemma 13 of the paper). The norm
+checks of every block (`IsSmall`) are exact integer comparisons: rows of `Z1` with
+`||.||^2 <= 2 k sigma1^2`; entries of `Z2` with `z^2 <= 81 sigma2^2`; each ring component of each
+column of `Z2` with `||.||^2 <= 2 N sigma2^2`.
 
 **Extraction.** From two accepting transcripts with different first challenges [BL17, Thm 3.5]:
 
@@ -110,8 +132,8 @@ component of each column of `Z2` at most `sqrt(2N) sigma2`.
   are 0 or a fixed sign with probability 1/2 each) gives the same probability bound
   `q_H^2 2^{-ell-1} + 2^{-ell}`, and the extractor obtains `2 S_bar` with
   `||2 S_bar||_inf <= 2 ||Z2 - Z2'||_inf <= 36 sigma2`, i.e. openings with **slack 2**; the M-SIS
-  bound becomes `2^{5/2} k sigma1 + 2^{5/2} sqrt(60 N) sigma2` because rows of `C2 - C2'` have norm at
-  most `2 sqrt(k)`. *Status: proof sketch; the paper must state and prove this variant.*
+  bound becomes `2^{5/2} k sigma1 + 2^{5/2} sqrt(60 N) sigma2` because columns of `C2 - C2'` have norm
+  at most `2 sqrt(k)`. Proved in the paper (Lemma 11 and Appendix B).
 
 With `B_A = 36 sigma2 sqrt(N mu)` (`l_2` bound of an extracted opening), slack `s` (1 or 2),
 `eta = 120`, `beta_h = 2 sigma sqrt(N mu)` and `B_bar = 2 B_J`:
@@ -169,9 +191,11 @@ statistical distance of each sampler from the ideal distribution is bounded.
   the target by at most `0.02%` for all masks here. Every bound (`sigma_J`, `B_J`, `sigma_1`,
   `sigma_2`, `B_A`, `beta_BL`, rejection) is computed with `sigma_out`, via `gauss_round_sigma()`.
   A larger `sigma` keeps the rejection bound valid with the same `M`.
-* Per attempt the aggregation draws at most `2^32` mask coefficients (`N_V = 10^6`), so the sampling
-  error is at most `2^-125` per attempt, below the rejection error `2^-100/M'`; it is added to the
-  simulation error.
+* Per attempt the ballot proof draws `(n + 1 + 2L) N (2d + L)` mask coefficients (26 880 for
+  `n = 4, L = 1`; 153 600 for `n = 4, L = 10`), so the sampling error is at most
+  `(n + 1 + 2L) N (2d + L) 2^-157`, i.e. `2^-142.3` and `2^-139.8`. The aggregation draws
+  `E N (2d + L) (k + ell)` coefficients per attempt, at most `2^33` for `N_V = 10^6`, hence at most
+  `2^-124`. Both are far below the rejection errors and are added to the simulation error.
 
 ## 6. Status of the statements
 
@@ -180,6 +204,7 @@ statistical distance of each sampler from the ideal distribution is bounded.
 | Formulas above; the numbers printed by `param_report` and `chain.py` | established (given the cited lemmas) |
 | Samplers | statistical distance bounded (see §5): `< 2^-187` (`sigma = 1`), `< 2^-157` (masks) per sample |
 | Ballot proof: rejection error per attempt `2^-100/M + 2^-168` | established |
+| Acceptance tests and norm checks | exact: integer arithmetic and exact Bernoulli(exp(-g)) sampling; only the PRG remains |
 | Aggregation with signed `C2`: bounds on both shifts (Lemma 13), extraction with slack 2 (Lemma 11) | proved in the paper; new in this version, independent verification pending |
 | Grinding: a union bound over `2^64` seeds per leaf | established in the ROM; `Q = 2^64` is an assumption on the adversary |
 | Expected attempts (ballot ~3, aggregation ~3) and the resulting costs | measured; plausible for other machines |

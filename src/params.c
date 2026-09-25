@@ -32,8 +32,11 @@ int tv_params_init(tv_params *p, int n, int t, int L, int w, int d, uint64_t q) 
     p->tau_bits = 128.0 + 40.0;        /* 2^-168 per attempt, hence 2^-128 over 2^40 attempts */
     p->T = shift_bound(TV_N, p->mu, n, L, p->sigma, p->tau_bits * log(2.0));
     p->sigma_J = gauss_round_sigma(p->alpha * p->T);   /* achievable sigma >= alpha T */
-    p->logM = 12.0 / p->alpha + 1.0 / (2.0 * p->alpha * p->alpha);
+    p->sigma_J2 = gauss_sigma2(p->sigma_J);
+    p->logM_num = 265; p->logM_den = 242;               /* 12/11 + 1/242 for alpha = 11 */
+    p->logM = (double)p->logM_num / (double)p->logM_den;
     p->B_J = 2.0 * p->sigma_J * sqrt((double)tv_resp_coeffs(p));
+    p->B_J2 = 4 * p->sigma_J2 * (uint64_t)tv_resp_coeffs(p);
     p->fanin = 30; p->k_blk = 500; p->ell = 517; p->kappa = 4;
     return ring_init(q);
 }

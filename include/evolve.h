@@ -12,6 +12,9 @@
 
 typedef struct {
     double T, sigma_OR, B_OR, logM;
+    uint64_t sigma_OR2;         /* sigma_OR^2 (integer) */
+    uint64_t B_OR2;             /* B_OR^2 = 4 sigma_OR^2 2 N mu (integer) */
+    int64_t logM_num, logM_den; /* ln M exactly */
 } ev_params;
 
 typedef struct {

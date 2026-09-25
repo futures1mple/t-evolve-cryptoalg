@@ -41,15 +41,28 @@ void sample_uniform_poly(poly *r, prg *p);
  *  gauss_round_sigma() so that all bounds are computed with sigma_out. */
 typedef struct {
     double sigma;              /* sigma_out */
+    uint64_t sigma2;           /* sigma_out^2, an integer: 1, or 65536 (a1^2+b1^2)(a2^2+b2^2) */
     int levels;                /* -1: sigma = 1 table; 0: base; 1 or 2: convolution levels */
     int32_t a[2], b[2];
 } gauss_sampler;
 
 double gauss_round_sigma(double sigma);      /* smallest achievable sigma_out >= sigma; <0 if none */
+uint64_t gauss_sigma2(double sigma);         /* sigma_out^2 as an integer for an achievable sigma_out */
 int gauss_init(gauss_sampler *g, double sigma);   /* sigma must be 1 or >= 256 */
 void gauss_free(gauss_sampler *g);
 int64_t gauss_sample(gauss_sampler *g, prg *p);
 void gauss_vec(gauss_sampler *g, prg *p, int64_t *out, size_t n);
+
+/* Exact rejection sampling (integer arithmetic only, no rounding).
+ * bern_exp returns 1 with probability exp(-num/den) for num >= 0, den > 0, by the algorithm of
+ * Canonne, Kamath and Steinke (NeurIPS 2020, Alg. 1): Bernoulli(exp(-g)) for g in [0,1] from
+ * Bernoulli(g/K) trials, and one Bernoulli(exp(-1)) trial per unit of g above 1. The only source of
+ * error is the PRG. reject_accept(p, zs, ss, sigma2, cn, cd) accepts with probability
+ * min(1, exp((ss - 2 zs)/(2 sigma2) - cn/cd)), the rule of Lyubashevsky with ln M = cn/cd, where
+ * zs = <z, s> and ss = ||s||^2 are exact integers. */
+typedef __int128 i128;
+int bern_exp(prg *p, i128 num, i128 den);
+int reject_accept(prg *p, i128 zs, i128 ss, uint64_t sigma2, int64_t cn, int64_t cd);
 
 /* challenge c in C = { c : 60 coefficients in {-1,1}, the rest 0 } */
 typedef struct {

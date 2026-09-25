@@ -159,7 +159,7 @@ static int plan(gauss_sampler *g, double target) {
     for (int i = 0; i < CACHE_N; i++) if (CACHE[i].target == target) { *g = CACHE[i].g; return 0; }
     memset(g, 0, sizeof *g);
     const double s0 = CDT_BASE_SIGMA, c2 = conv_c2();
-    if (target <= s0) { g->levels = 0; g->sigma = s0; goto done; }
+    if (target <= s0) { g->levels = 0; g->sigma = s0; g->sigma2 = (uint64_t)(s0 * s0); goto done; }
     /* n_total = (a1^2+b1^2)(a2^2+b2^2) must be >= need = ceil((target/s0)^2) */
     double r = target / s0;
     int64_t need = (int64_t)ceil(r * r);
@@ -185,6 +185,7 @@ static int plan(gauss_sampler *g, double target) {
         }
     if (!best) return -1;
     g->sigma = s0 * sqrt((double)best);
+    g->sigma2 = (uint64_t)(s0 * s0) * (uint64_t)best;
 done:
     if (CACHE_N < 16) { CACHE[CACHE_N].target = target; CACHE[CACHE_N].g = *g; CACHE_N++; }
     return 0;
@@ -200,12 +201,61 @@ double gauss_round_sigma(double sigma) {
 int gauss_init(gauss_sampler *g, double sigma) {
     cdt_ready();
     memset(g, 0, sizeof *g);
-    if (sigma == 1.0) { g->sigma = 1.0; g->levels = -1; return 0; }
+    if (sigma == 1.0) { g->sigma = 1.0; g->sigma2 = 1; g->levels = -1; return 0; }
     if (!(sigma > 1.0)) return -1;
     return plan(g, sigma);
 }
 
 void gauss_free(gauss_sampler *g) { (void)g; }
+
+uint64_t gauss_sigma2(double sigma) {
+    gauss_sampler g;
+    if (gauss_init(&g, sigma)) return 0;
+    return g.sigma2;
+}
+
+/* ---------------- exact rejection ---------------- */
+
+typedef unsigned __int128 u128;
+
+/* uniform integer in [0, m), 0 < m < 2^127, by rejection from the smallest power of two >= m */
+static u128 uniform_below(prg *p, u128 m) {
+    int bits = 0;
+    while (bits < 128 && ((u128)1 << bits) < m) bits++;
+    u128 mask = bits >= 128 ? ~(u128)0 : (((u128)1 << bits) - 1);
+    for (;;) {
+        u128 x = ((u128)prg_u64(p) << 64) | prg_u64(p);
+        x &= mask;
+        if (x < m) return x;
+    }
+}
+
+/* 1 with probability num/den, 0 <= num <= den */
+static int bern_frac(prg *p, u128 num, u128 den) { return uniform_below(p, den) < num; }
+
+/* 1 with probability exp(-num/den), 0 <= num <= den [CKS20, Alg. 1] */
+static int bern_exp01(prg *p, u128 num, u128 den) {
+    u128 K = 1;
+    while (bern_frac(p, num, den * K)) K++;
+    return (int)(K & 1);
+}
+
+int bern_exp(prg *p, i128 num, i128 den) {
+    if (num <= 0) return 1;
+    u128 n = (u128)num, d = (u128)den;
+    while (n > d) {                       /* exp(-g) = exp(-1) * exp(-(g-1)) */
+        if (!bern_exp01(p, d, d)) return 0;
+        n -= d;
+    }
+    return bern_exp01(p, n, d);
+}
+
+int reject_accept(prg *p, i128 zs, i128 ss, uint64_t sigma2, int64_t cn, int64_t cd) {
+    /* R = (2 zs - ss)/(2 sigma2) + cn/cd = ((2 zs - ss) cd + 2 sigma2 cn) / (2 sigma2 cd); accept w.p. exp(-R) */
+    i128 den = (i128)2 * (i128)sigma2 * (i128)cd;
+    i128 num = ((i128)2 * zs - ss) * (i128)cd + (i128)2 * (i128)sigma2 * (i128)cn;
+    return bern_exp(p, num, den);
+}
 
 static int64_t conv_sample(const gauss_sampler *g, prg *p, signbits *sb, int level) {
     if (level == 0) return cdt_sample(p, sb, CDT_S256, &IX256);
