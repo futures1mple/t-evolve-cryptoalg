@@ -1,0 +1,7 @@
+  gauss sigma=1: n=4000000 mean=-0.0004 var=0.9992 (exact 1.0000) chi2=13.1 dof=10
+  gauss sigma=3: n=2000000 mean=0.0004 var=8.9996 (exact 9.0000) chi2=26.9 dof=26
+  gauss sigma=40: n=2000000 mean=0.0146 var=1599.2070 (exact 1600.0000) chi2=321.3 dof=322
+  gauss sigma=100: n=1000000 mean/sigma=-0.0013 var/sigma^2=1.0032
+  gauss sigma=25000: n=1000000 mean/sigma=-0.0013 var/sigma^2=1.0032
+  gauss sigma=1e+09: n=1000000 mean/sigma=-0.0013 var/sigma^2=1.0032
+all core tests passed (0 failures)

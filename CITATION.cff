@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper and the software as below."
+title: "T-EVOLVE: reference implementation"
+authors:
+  - family-names: Alizadeh
+    given-names: Jalal
+    affiliation: "Azerbaijan Technical University"
+license: MIT
+repository-code: "https://github.com/<user>/t-evolve"
+version: "0.1.0"
+date-released: "2026-09-24"
+preferred-citation:
+  type: article
+  title: "Threshold Post-Quantum E-Voting from Lattice Commitments"
+  authors:
+    - family-names: Alizadeh
+      given-names: Jalal
+  year: 2026
+  notes: "Preprint"

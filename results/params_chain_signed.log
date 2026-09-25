@@ -1,0 +1,6 @@
+NV=10000 L=1 d=7 logq=42 beta=2^41.2 hiding=2^138.4 binding=2^147.6
+NV=10000 L=2 d=7 logq=42 beta=2^41.2 hiding=2^138.4 binding=2^147.1
+NV=100000 L=1 d=7 logq=43 beta=2^42.5 hiding=2^135.0 binding=2^140.9
+NV=100000 L=2 d=7 logq=43 beta=2^42.6 hiding=2^135.0 binding=2^140.4
+NV=1000000 L=1 d=7 logq=45 beta=2^44.1 hiding=2^128.9 binding=2^137.1
+NV=1000000 L=2 d=7 logq=45 beta=2^44.2 hiding=2^128.9 binding=2^136.5
