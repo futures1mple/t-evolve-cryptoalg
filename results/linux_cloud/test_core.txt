@@ -1,7 +1,17 @@
-  gauss sigma=1: n=4000000 mean=-0.0004 var=0.9992 (exact 1.0000) chi2=13.1 dof=10
-  gauss sigma=3: n=2000000 mean=0.0004 var=8.9996 (exact 9.0000) chi2=26.9 dof=26
-  gauss sigma=40: n=2000000 mean=0.0146 var=1599.2070 (exact 1600.0000) chi2=321.3 dof=322
-  gauss sigma=100: n=1000000 mean/sigma=-0.0013 var/sigma^2=1.0032
-  gauss sigma=25000: n=1000000 mean/sigma=-0.0013 var/sigma^2=1.0032
-  gauss sigma=1e+09: n=1000000 mean/sigma=-0.0013 var/sigma^2=1.0032
+  plan target=300: levels=1 a=(1,0) b=(1,0) sigma_out/target=1.20680
+  plan target=1000: levels=1 a=(4,0) b=(1,0) sigma_out/target=1.05552
+  plan target=25113.9: levels=2 a=(1,67) b=(1,18) sigma_out/target=1.00011
+  plan target=27000: levels=2 a=(2,44) b=(1,17) sigma_out/target=1.00006
+  plan target=54000: levels=2 a=(3,51) b=(1,43) sigma_out/target=1.00006
+  plan target=120000: levels=2 a=(5,64) b=(2,59) sigma_out/target=1.00001
+  plan target=2.8e+06: levels=2 a=(13,540) b=(12,301) sigma_out/target=1.00000
+  plan target=8.9e+06: levels=2 a=(47,685) b=(7,257) sigma_out/target=1.00000
+  plan target=3e+07: levels=2 a=(38,2513) b=(27,68) sigma_out/target=1.00000
+  plan target=9.1e+07: levels=2 a=(62,4623) b=(45,397) sigma_out/target=1.00000
+  plan target=2e+08: levels=2 a=(76,5563) b=(69,5194) sigma_out/target=1.00000
+  gauss target=1 sigma_out=1.000 levels=-1: n=4000000 var/sigma^2=1.0002 chi2=6.1 dof=10
+  gauss target=256 sigma_out=256.000 levels=0: n=2000000 var/sigma^2=0.9996 chi2=29.2 dof=34
+  gauss target=1000 sigma_out=1055.515 levels=1: n=2000000 var/sigma^2=1.0005 chi2=32.8 dof=36
+  gauss target=25113.9 sigma_out=25116.718 levels=2: n=2000000 var/sigma^2=1.0012 chi2=21.2 dof=36
+  gauss target=8.9e+06 sigma_out=8900000.038 levels=2: n=2000000 var/sigma^2=0.9995 chi2=31.7 dof=36
 all core tests passed (0 failures)

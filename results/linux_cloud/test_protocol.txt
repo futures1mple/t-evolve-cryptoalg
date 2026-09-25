@@ -1,0 +1,206 @@
+ballots: n=4 t=3 L=1 w=-1 d=8 logq=47
+  ok: params
+  ok: public parameters
+  ok: H * shares = 0
+  ok: Lagrange interpolation from 3 shares
+  ok: vote 0 produced (6 attempts)
+  ok: ballot 0 verifies
+  ok: encode/decode (131877 bytes: com 67680, ct 128, proof 64061)
+  ok: decoded ballot verifies
+  ok: truncated encoding rejected
+  ok: encoding with an extra byte rejected
+  ok: every authority opens its share
+  ok: wrong key -> invalid opening (complaint)
+  ok: reject: modified response z
+  ok: reject: modified OR response
+  ok: reject: modified challenge
+  ok: reject: commitment to vote + 1
+  ok: reject: inconsistent share
+  ok: reject: modified ciphertext
+  ok: reject: other voter identity
+  ok: reject: modified OR challenge f_0
+  ok: reject: responses above the norm bound
+  ok: vote 1 produced (2 attempts)
+  ok: ballot 1 verifies
+  ok: encode/decode (131908 bytes: com 67680, ct 128, proof 64092)
+  ok: decoded ballot verifies
+  ok: truncated encoding rejected
+  ok: encoding with an extra byte rejected
+  ok: every authority opens its share
+  ok: wrong key -> invalid opening (complaint)
+  ok: reject: modified response z
+  ok: reject: modified OR response
+  ok: reject: modified challenge
+  ok: reject: commitment to vote + 1
+  ok: reject: inconsistent share
+  ok: reject: modified ciphertext
+  ok: reject: other voter identity
+  ok: reject: modified OR challenge f_0
+  ok: reject: responses above the norm bound
+  ok: vote 2 produced (1 attempts)
+  ok: ballot 2 verifies
+  ok: encode/decode (131866 bytes: com 67680, ct 128, proof 64050)
+  ok: decoded ballot verifies
+  ok: truncated encoding rejected
+  ok: encoding with an extra byte rejected
+  ok: every authority opens its share
+  ok: wrong key -> invalid opening (complaint)
+  ok: reject: modified response z
+  ok: reject: modified OR response
+  ok: reject: modified challenge
+  ok: reject: commitment to vote + 1
+  ok: reject: inconsistent share
+  ok: reject: modified ciphertext
+  ok: reject: other voter identity
+  ok: reject: modified OR challenge f_0
+  ok: reject: responses above the norm bound
+  ok: prover refuses vote 2
+ballots: n=5 t=3 L=2 w=1 d=8 logq=47
+  ok: params
+  ok: public parameters
+  ok: H * shares = 0
+  ok: Lagrange interpolation from 3 shares
+  ok: vote 0 produced (1 attempts)
+  ok: ballot 0 verifies
+  ok: encode/decode (188867 bytes: com 90240, ct 160, proof 98459)
+  ok: decoded ballot verifies
+  ok: truncated encoding rejected
+  ok: encoding with an extra byte rejected
+  ok: every authority opens its share
+  ok: wrong key -> invalid opening (complaint)
+  ok: reject: modified response z
+  ok: reject: modified OR response
+  ok: reject: modified challenge
+  ok: reject: commitment to vote + 1
+  ok: reject: inconsistent share
+  ok: reject: modified ciphertext
+  ok: reject: other voter identity
+  ok: reject: modified OR challenge f_0
+  ok: reject: responses above the norm bound
+  ok: vote 1 produced (2 attempts)
+  ok: ballot 1 verifies
+  ok: encode/decode (188830 bytes: com 90240, ct 160, proof 98422)
+  ok: decoded ballot verifies
+  ok: truncated encoding rejected
+  ok: encoding with an extra byte rejected
+  ok: every authority opens its share
+  ok: wrong key -> invalid opening (complaint)
+  ok: reject: modified response z
+  ok: reject: modified OR response
+  ok: reject: modified challenge
+  ok: reject: commitment to vote + 1
+  ok: reject: inconsistent share
+  ok: reject: modified ciphertext
+  ok: reject: other voter identity
+  ok: reject: modified OR challenge f_0
+  ok: reject: responses above the norm bound
+  ok: prover refuses vote 2
+  ok: prover refuses wrong weight
+ballots: n=3 t=2 L=3 w=2 d=7 logq=42
+  ok: params
+  ok: public parameters
+  ok: H * shares = 0
+  ok: Lagrange interpolation from 2 shares
+  ok: vote 0 produced (1 attempts)
+  ok: ballot 0 verifies
+  ok: encode/decode (147184 bytes: com 53760, ct 96, proof 93320)
+  ok: decoded ballot verifies
+  ok: truncated encoding rejected
+  ok: encoding with an extra byte rejected
+  ok: every authority opens its share
+  ok: wrong key -> invalid opening (complaint)
+  ok: reject: modified response z
+  ok: reject: modified OR response
+  ok: reject: modified challenge
+  ok: reject: commitment to vote + 1
+  ok: reject: inconsistent share
+  ok: reject: modified ciphertext
+  ok: reject: other voter identity
+  ok: reject: modified OR challenge f_0
+  ok: reject: responses above the norm bound
+  ok: vote 1 produced (3 attempts)
+  ok: ballot 1 verifies
+  ok: encode/decode (147172 bytes: com 53760, ct 96, proof 93308)
+  ok: decoded ballot verifies
+  ok: truncated encoding rejected
+  ok: encoding with an extra byte rejected
+  ok: every authority opens its share
+  ok: wrong key -> invalid opening (complaint)
+  ok: reject: modified response z
+  ok: reject: modified OR response
+  ok: reject: modified challenge
+  ok: reject: commitment to vote + 1
+  ok: reject: inconsistent share
+  ok: reject: modified ciphertext
+  ok: reject: other voter identity
+  ok: reject: modified OR challenge f_0
+  ok: reject: responses above the norm bound
+  ok: prover refuses vote 2
+  ok: prover refuses wrong weight
+EVOLVE ballots on the same core
+  ok: EVOLVE vote 0 (6 attempts)
+  ok: EVOLVE ballot 0 verifies
+  ok: shares add up to the vote
+  ok: EVOLVE ballot 72830 bytes (com 54144, proof 18550)
+  ok: reject: modified OR response
+  ok: reject: sum commits to vote + 1
+  ok: EVOLVE vote 1 (1 attempts)
+  ok: EVOLVE ballot 1 verifies
+  ok: shares add up to the vote
+  ok: EVOLVE ballot 72836 bytes (com 54144, proof 18556)
+  ok: reject: modified OR response
+  ok: reject: sum commits to vote + 1
+aggregation: NV=70 n=4 t=3 L=2 C2=signed
+  ok: 70 ballots valid and all shares open
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=signed logQ=64 E=3 (open 1, zero 2) nodes=74
+  T1=2^15.03 T2=2^15.21 sigma1=2^19.47 sigma2=2^19.66
+  ok: round 1: authority 1 round 1 (13272 ms, 63296 bytes)
+  ok: round 1: authority 2 round 1 (13199 ms, 63296 bytes)
+  ok: round 1: authority 3 round 1 (13193 ms, 63296 bytes)
+  ok: round 1: authority 4 round 1 (13304 ms, 63296 bytes)
+  authority 1 round 2: ok after 2 attempts, ||B1||/T1=0.195 ||B2||/T2=0.502, 2419 ms, 20450240 bytes
+  authority 2 round 2: ok after 1 attempts, ||B1||/T1=0.194 ||B2||/T2=0.503, 1225 ms, 20449690 bytes
+  authority 3 round 2: ok after 1 attempts, ||B1||/T1=0.195 ||B2||/T2=0.503, 1216 ms, 20449636 bytes
+  authority 4 round 2: no attempt after 4 attempts, ||B1||/T1=0.194 ||B2||/T2=0.501, 4836 ms, 1 bytes
+  ok: at least t authorities succeeded after 1 round(s)
+  ok: VerAgg accepts authority 1
+  ok: VerAgg accepts authority 2
+  ok: VerAgg accepts authority 3
+  ok: tally from authorities {1,2,3}: 35/35 (expected 35/35)
+  ok: reject: modified Z1
+  ok: reject: modified Z2
+  ok: reject: partial tally + 1
+  ok: reject: modified node commitment
+  ok: reject: other set of leaves
+  ok: restored contribution verifies
+  ok: reject: other board state
+  ok: reject: modified leaf
+  ok: (leaf still modified)
+aggregation: NV=35 n=4 t=3 L=2 C2=binary
+  ok: 35 ballots valid and all shares open
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=binary logQ=64 E=3 (open 1, zero 2) nodes=38
+  T1=2^14.52 T2=2^15.98 sigma1=2^18.97 sigma2=2^20.43
+  ok: round 1: authority 1 round 1 (13225 ms, 48256 bytes)
+  ok: round 1: authority 2 round 1 (12922 ms, 48256 bytes)
+  ok: round 1: authority 3 round 1 (13048 ms, 48256 bytes)
+  ok: round 1: authority 4 round 1 (12808 ms, 48256 bytes)
+  authority 1 round 2: ok after 4 attempts, ||B1||/T1=0.199 ||B2||/T2=0.151, 4467 ms, 20712509 bytes
+  authority 2 round 2: ok after 3 attempts, ||B1||/T1=0.199 ||B2||/T2=0.152, 3348 ms, 20712374 bytes
+  authority 3 round 2: ok after 3 attempts, ||B1||/T1=0.198 ||B2||/T2=0.151, 3371 ms, 20712470 bytes
+  authority 4 round 2: ok after 1 attempts, ||B1||/T1=0.196 ||B2||/T2=0.151, 1106 ms, 20712674 bytes
+  ok: at least t authorities succeeded after 1 round(s)
+  ok: VerAgg accepts authority 1
+  ok: VerAgg accepts authority 2
+  ok: VerAgg accepts authority 3
+  ok: VerAgg accepts authority 4
+  ok: tally from authorities {1,2,3}: 18/17 (expected 18/17)
+  ok: reject: modified Z1
+  ok: reject: modified Z2
+  ok: reject: partial tally + 1
+  ok: reject: modified node commitment
+  ok: reject: other set of leaves
+  ok: restored contribution verifies
+  ok: reject: other board state
+  ok: reject: modified leaf
+  ok: (leaf still modified)
+all protocol tests passed (0 failures)

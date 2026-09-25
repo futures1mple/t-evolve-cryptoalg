@@ -128,8 +128,10 @@ announce, no responses are published and the round costs the work of both rounds
 beyond round 1. If at least `t` announce but fewer than `t` valid contributions arrive by `Delta_2`,
 an announcing authority has misbehaved: it is recorded as faulty and excluded from later rounds,
 and the honest authorities have already published their responses (one extra round-2 publication
-each). Misbehaviour thus causes at most `n - t` extra rounds. The benchmark has no faulty
-authorities.
+each). Misbehaviour cannot make a round fail that would otherwise succeed (the contributions of `t`
+honest authorities with a non-aborting attempt complete it), so it adds publications in at most
+`n - t` rounds but no rounds. Contributions carry their round index, and only `t` contributions of
+the same round are combined. The benchmark has no faulty authorities.
 
 **Common leaves.** The leaves are the share commitments of the accepted ballots, which are the
 same for every authority (a ballot with a valid complaint is removed for all). The hash of the leaf

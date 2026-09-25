@@ -76,9 +76,10 @@ def main(folder):
         s, r_all, r_worst = rounds_model(1 / 3, 4, 4, 3)
         out.append(f"\nRounds (kappa = 4, attempt success 1/3): an authority succeeds in a round with probability {s:.2f}; "
                    f"expected rounds {r_all:.2f} with 4 honest authorities, at most {r_worst:.2f} with 3. If fewer than t authorities "
-                   f"announce an attempt, no responses are published. If an announcing authority then posts no valid contribution, "
-                   f"the honest ones have already published theirs, the faulty one is excluded, and the round is repeated: at most n - t "
-                   f"extra rounds. The benchmark has no faulty authorities.\n")
+                   f"announce an attempt, no responses are published. Misbehaviour cannot make a round fail that would otherwise succeed; "
+                   f"an authority that announces and then posts no valid contribution only makes the honest authorities publish their "
+                   f"responses in a round that fails anyway, and is excluded afterwards (at most n - t such rounds). "
+                   f"The benchmark has no faulty authorities.\n")
     rej = os.path.join(folder, "ballot_rej_summary.csv")
     if os.path.exists(rej):
         out.append("## Ballot rejection experiment\n\n| n | L | log2 sigma_J | Ballots | Attempts (mean ± 95%) | max ‖s‖/T | Verified | GOF p | Independence p |\n|---|---|---|---|---|---|---|---|---|")
