@@ -21,7 +21,7 @@ encryption of the seeds is a placeholder (see *Scope*). Do not use it to run ele
 |---|---|---|
 | SHAKE128/256 (FIPS 202) | `src/keccak.c` | — |
 | `R_q = Z_q[X]/(X^256+1)`, `q = 17 mod 32` prime `< 2^50`, 3-level partial NTT, Montgomery arithmetic | `src/ring.c` | §6, choice of `q` |
-| Exact discrete Gaussian sampler, challenges, EVOLVE's permutation challenges | `src/sample.c` | §3 |
+| Discrete Gaussian samplers with bounded error (192-bit tables, convolution), challenges, EVOLVE's permutation challenges | `src/sample.c` | §3 |
 | BDLOP commitments (multi-message form), Shamir sharing, Reed–Solomon parity checks, Lagrange | `src/bdlop.c`, `src/shamir.c` | §3 |
 | Ballot with the EVOLVE-style ballot proof, one joint rejection step, OR-proofs, weight proof; seed-derived share randomness | `src/ballot.c` | §4 (Fig. 2), §6 |
 | Authority aggregation: recommitment tree, `Pi_open` and `Pi_zero` after Baum–Lyubashevsky 2017 with one joint rejection per stage over all blocks, `kappa` attempts committed by `G(W, salt)`, announce-then-reveal | `src/agg.c` | §6 |
@@ -73,10 +73,13 @@ Individual programs:
 * **PKE.** The paper needs labeled IND-CCA encryption with verifiable decryption. Here the seed
   of each share is encrypted with a placeholder (`seed xor SHAKE256(key || id)`), which fixes the
   data flow and the 32-byte payload but is not secure; the cost of a real KEM (e.g. ML-KEM, tens of
-  microseconds) is not included, as in the paper's tables. Signatures are not implemented.
-* **Side channels.** Nothing is constant-time. The sampler for `sigma = 1` is an integer table
-  (platform-independent); the sampler for the large masks uses floating point, whose error is not
-  bounded formally (`docs/PARAMETERS.md`, §5).
+  microseconds) is not included, as in the paper's tables. Signatures and the proofs of correct
+  decryption that authorities attach to complaints (`ProveDec`) are not implemented either. The
+  measured sizes therefore count each ciphertext as its 32-byte payload and contain no signature;
+  the paper gives an estimate with ML-KEM-768 and ML-DSA-44 separately.
+* **Side channels.** Nothing is constant-time (in particular the table lookups of the samplers).
+  The samplers use integer arithmetic only and are platform-independent; their statistical distance
+  from the ideal distributions is bounded (`docs/PARAMETERS.md`, §5).
 * **Scale.** Aggregation is measured for `N_V = 10^3` and `10^4`. For `10^5` and `10^6` the cost is
   linear in the number of blocks `E`, and the benchmark reports per-block costs from which the paper
   extrapolates; these numbers are marked as extrapolated.

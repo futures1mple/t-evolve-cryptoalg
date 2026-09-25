@@ -122,9 +122,14 @@ With `B_A = 36 sigma2 sqrt(N mu)` (`l_2` bound of an extracted opening), slack `
 probability `(2/3)^4 = 0.198`. A round succeeds if at least `t` authorities have one: with `n = 4`,
 `t = 3` and all authorities honest this happens with probability 0.82 (1.22 rounds on average); with
 only `t` honest authorities, with probability at least `0.80^3 = 0.52` (at most 1.94 rounds). An
-authority first announces the index of its non-aborting attempt and reveals the responses only if
-the round succeeds, so the responses of failed rounds are never published; a failed round costs the
-work of round 1 and round 2 but no publication beyond round 1.
+authority first announces the index of its non-aborting attempt by a deadline `Delta_1`; if at least
+`t` authorities have announced one, they reveal their responses by `Delta_2`. If fewer than `t`
+announce, no responses are published and the round costs the work of both rounds but no publication
+beyond round 1. If at least `t` announce but fewer than `t` valid contributions arrive by `Delta_2`,
+an announcing authority has misbehaved: it is recorded as faulty and excluded from later rounds,
+and the honest authorities have already published their responses (one extra round-2 publication
+each). Misbehaviour thus causes at most `n - t` extra rounds. The benchmark has no faulty
+authorities.
 
 **Common leaves.** The leaves are the share commitments of the accepted ballots, which are the
 same for every authority (a ballot with a valid complaint is removed for all). The hash of the leaf
@@ -139,24 +144,41 @@ least `2^128` (elements of `Z_q` then take exactly `b` bits), using the lattice 
 Euclidean norm for M-SIS (`n = dN`, `m = mu N`). Every estimate, with all attacks, is written to
 `results/params_chain_*.jsonl`.
 
-## 5. Sampling
+## 5. Sampling (`src/sample.c`, `tools/gen_cdt.py`)
 
-* `sigma = 1` (all commitment randomness, including the seed-derived randomness of the shares):
-  integer cumulative-distribution table, statistical distance about `2^-60` per sample, identical on
-  every platform, so the authority re-derives exactly the voter's randomness.
-* Large `sigma` (masks): Box–Muller in double precision (with the radius tail refined to 106-bit
-  resolution), rounding, and an acceptance step `I(0)/I(x)` that makes the rounded output exactly
-  `D_{Z,sigma}` in exact arithmetic. The floating-point error of this sampler is not bounded formally
-  and is **not** included in the simulation errors above; an integer sampler would remove this gap.
+Integer arithmetic only, so every platform produces the same output from the same stream; the
+statistical distance of each sampler from the ideal distribution is bounded.
+
+* `sigma = 1` (all commitment randomness, including the seed-derived randomness of the shares): a
+  table of `floor(2^192 Pr[|X| <= x])` for `x < 17`, generated with 400-bit arithmetic by
+  `tools/gen_cdt.py`; `r` is uniform in `[0, 2^192)`, drawn 64 bits at a time only as far as the
+  comparisons need, and `|X| = #{x : r >= CDT[x]}`, with a uniform sign. Statistical distance at most
+  `18 * 2^-192 + 2^-200 < 2^-187` per sample.
+* Base sampler `D_{Z,256}`: the same construction with 4217 entries, distance `< 2^-179` per sample.
+* Large `sigma` (masks): convolution as in Micciancio–Walter (CRYPTO 2017). Level 1 returns
+  `a1 x + b1 x'` for two base samples, level 2 returns `a2 y + b2 y'` for two level-1 samples,
+  with `gcd(a_l, b_l) = 1` and `max(a_l, b_l)^2 <= (pi / eta^2) sigma_in^2`, where
+  `eta = sqrt(ln(2 + 2^161) / pi) >= eta_eps(Z)` for `eps = 2^-160` [MR04, Lemma 3.3]. By the
+  convolution theorem [MP13, Thm. 3.3; MW17, Thm. 2.1 and Lemma 5.1] the output built from exact base
+  samples has relative error at most `2^levels * 2 eps <= 2^-157` with respect to `D_{Z,sigma_out}`,
+  `sigma_out = 256 sqrt((a1^2 + b1^2)(a2^2 + b2^2))`; replacing the (at most four) base samples by
+  the table adds at most `4 * 2^-179`. Hence at most `2^-157` per sample.
+* `sigma_out` is the smallest achievable value `>= alpha T` (the search is in `plan()`); it exceeds
+  the target by at most `0.02%` for all masks here. Every bound (`sigma_J`, `B_J`, `sigma_1`,
+  `sigma_2`, `B_A`, `beta_BL`, rejection) is computed with `sigma_out`, via `gauss_round_sigma()`.
+  A larger `sigma` keeps the rejection bound valid with the same `M`.
+* Per attempt the aggregation draws at most `2^32` mask coefficients (`N_V = 10^6`), so the sampling
+  error is at most `2^-125` per attempt, below the rejection error `2^-100/M'`; it is added to the
+  simulation error.
 
 ## 6. Status of the statements
 
 | Statement | Status |
 |---|---|
 | Formulas above; the numbers printed by `param_report` and `chain.py` | established (given the cited lemmas) |
-| Floating-point sampler for large `sigma` | error not bounded formally (see §5) |
+| Samplers | statistical distance bounded (see §5): `< 2^-187` (`sigma = 1`), `< 2^-157` (masks) per sample |
 | Ballot proof: rejection error per attempt `2^-100/M + 2^-168` | established |
-| Aggregation with signed `C2`: bounds on both shifts, for any alignment of the leaves | established for the bounds; the extraction lemma for signed `C2` is a proof sketch |
+| Aggregation with signed `C2`: bounds on both shifts (Lemma 13), extraction with slack 2 (Lemma 11) | proved in the paper; new in this version, independent verification pending |
 | Grinding: a union bound over `2^64` seeds per leaf | established in the ROM; `Q = 2^64` is an assumption on the adversary |
 | Expected attempts (ballot ~3, aggregation ~3) and the resulting costs | measured; plausible for other machines |
 | 128-bit security of the chosen `(d, q)` | estimate of the lattice estimator; the reduction of the paper is not tight |

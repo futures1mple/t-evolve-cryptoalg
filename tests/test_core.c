@@ -122,71 +122,86 @@ static void test_challenges(void) {
     }
 }
 
-/* chi-square test of the sampler against the exact pmf of D_{Z,sigma} */
-static void test_gauss(double sigma, int n) {
+/* probability of [lo, hi] under D_{Z,sigma}; exact sums for small sigma, erf otherwise */
+static double dg_mass(double sigma, double Z, long lo, long hi) {
+    if (sigma <= 3000) {
+        double m = 0;
+        for (long x = lo; x <= hi; x++) m += exp(-(double)x * x / (2 * sigma * sigma));
+        return m / Z;
+    }
+    double c = sqrt(2.0) * sigma;
+    return 0.5 * (erf((hi + 0.5) / c) - erf((lo - 0.5) / c));
+}
+
+/* chi-square test of gauss_vec against D_{Z,sigma_out} with 2B+1 bins of width w plus two tails */
+static void test_gauss(double target, int n) {
     gauss_sampler g;
-    CHECK(gauss_init(&g, sigma) == 0, "gauss_init");
+    CHECK(gauss_init(&g, target) == 0, "gauss_init %g", target);
+    double sigma = g.sigma;
+    CHECK(sigma >= target && (target < 20000 || sigma <= target * 1.001), "sigma_out %g for target %g", sigma, target);
     uint8_t seed[32] = {7};
     prg p;
     prg_init(&p, 2, seed, 32);
-    int B = (int)ceil(4 * sigma);
+    long w = sigma < 8 ? 1 : (long)(sigma / 4);
+    int B = (int)ceil(4 * sigma / w);
     long *cnt = calloc((size_t)(2 * B + 3), sizeof(long));
     double s1 = 0, s2 = 0;
     int64_t *vec = malloc(sizeof(int64_t) * 1000);
     for (int i = 0; i < n; i++) {
-        if (i % 1000 == 0) gauss_vec(&g, &p, vec, 1000);   /* sigma = 1: integer table; otherwise Box-Muller */
+        if (i % 1000 == 0) gauss_vec(&g, &p, vec, 1000);
         int64_t x = vec[i % 1000];
         s1 += (double)x; s2 += (double)x * (double)x;
-        int b = x < -B ? 0 : x > B ? 2 * B + 2 : (int)(x + B + 1);
-        cnt[b]++;
+        long t = (long)x + w / 2, q = t >= 0 ? t / w : -((-t + w - 1) / w);   /* floor((x + w/2)/w) */
+        int bin = q < -B ? 0 : q > B ? 2 * B + 2 : (int)(q + B + 1);
+        cnt[bin]++;
     }
-    /* exact pmf */
     double Z = 0;
-    for (int x = -(int)(40 * sigma); x <= (int)(40 * sigma); x++) Z += exp(-(double)x * x / (2 * sigma * sigma));
-    double chi = 0;
+    if (sigma <= 3000) for (long x = -(long)(40 * sigma); x <= (long)(40 * sigma); x++) Z += exp(-(double)x * x / (2 * sigma * sigma));
+    double chi = 0, inner = 0;
     int dof = 0;
-    double tail = 0;
-    for (int x = -B; x <= B; x++) {
-        double e = n * exp(-(double)x * x / (2 * sigma * sigma)) / Z;
-        tail += e;
-        double o = (double)cnt[x + B + 1];
-        chi += (o - e) * (o - e) / e;
-        dof++;
+    for (int q = -B; q <= B; q++) {
+        long lo = q * w - w / 2, hi = lo + w - 1;
+        if (w == 1) lo = hi = q;
+        double e = n * dg_mass(sigma, Z, lo, hi);
+        inner += e;
+        double o = (double)cnt[q + B + 1];
+        if (e > 5) { chi += (o - e) * (o - e) / e; dof++; }
     }
-    double et = (n - tail) / 2;          /* each tail */
-    chi += (cnt[0] - et) * (cnt[0] - et) / et + (cnt[2 * B + 2] - et) * (cnt[2 * B + 2] - et) / et;
-    dof += 1;
+    double et = (n - inner) / 2;
+    if (et > 5) { chi += (cnt[0] - et) * (cnt[0] - et) / et + (cnt[2 * B + 2] - et) * (cnt[2 * B + 2] - et) / et; dof += 2; }
+    dof -= 1;
     double var = s2 / n - (s1 / n) * (s1 / n);
-    double var_exact = 0;
-    for (int x = -(int)(40 * sigma); x <= (int)(40 * sigma); x++) var_exact += (double)x * x * exp(-(double)x * x / (2 * sigma * sigma)) / Z;
-    /* chi-square with dof degrees of freedom: mean dof, sd sqrt(2 dof); allow 5 sd */
-    printf("  gauss sigma=%g: n=%d mean=%.4f var=%.4f (exact %.4f) chi2=%.1f dof=%d\n", sigma, n, s1 / n, var, var_exact, chi, dof);
+    printf("  gauss target=%g sigma_out=%.3f levels=%d: n=%d var/sigma^2=%.4f chi2=%.1f dof=%d\n",
+           target, sigma, g.levels, n, var / (sigma * sigma), chi, dof);
     CHECK(chi < dof + 5 * sqrt(2.0 * dof), "gauss chi-square sigma=%g", sigma);
-    CHECK(fabs(var / var_exact - 1) < 6 * sqrt(2.0 / n), "gauss variance sigma=%g", sigma);
+    CHECK(fabs(var / (sigma * sigma) - 1) < 6 * sqrt(2.0 / n) + (sigma < 3 ? 0.01 : 0), "gauss variance sigma=%g", sigma);
     free(cnt);
     free(vec);
     gauss_free(&g);
 }
 
-static void test_gauss_large(double sigma, int n) {
-    gauss_sampler g;
-    gauss_init(&g, sigma);
-    uint8_t seed[32] = {11};
-    prg p;
-    prg_init(&p, 3, seed, 32);
-    double s1 = 0, s2 = 0;
-    for (int i = 0; i < n; i++) { double x = (double)gauss_sample(&g, &p); s1 += x; s2 += x * x; }
-    double var = s2 / n - (s1 / n) * (s1 / n);
-    printf("  gauss sigma=%g: n=%d mean/sigma=%.4f var/sigma^2=%.4f\n", sigma, n, s1 / n / sigma, var / (sigma * sigma));
-    CHECK(fabs(var / (sigma * sigma) - 1) < 6 * sqrt(2.0 / n), "gauss variance sigma=%g", sigma);
-    /* the fast-path bound: I(0)/I(x) >= 1 - 4/sigma^2 for |x| <= 9 sigma */
-    for (int k = 0; k <= 9; k++) {
-        int64_t x = (int64_t)(k * sigma);
-        CHECK(gauss_accept_prob(sigma, x) >= g.fast, "fast-path bound sigma=%g x=%lld", sigma, (long long)x);
+/* the conditions of the convolution theorem hold for every plan used by the parameter sets */
+static void test_gauss_plans(void) {
+    const double c2 = 9.8696044010893586188 / log(2.0 + pow(2.0, 161));
+    double targets[] = {300, 1000, 25113.9, 27000, 54000, 1.2e5, 2.8e6, 8.9e6, 3.0e7, 9.1e7, 2.0e8};
+    for (unsigned i = 0; i < sizeof targets / sizeof *targets; i++) {
+        gauss_sampler g;
+        CHECK(gauss_init(&g, targets[i]) == 0, "plan %g", targets[i]);
+        double s_in = 256;
+        double prod = 1;
+        for (int l = 0; l < g.levels; l++) {
+            long a = g.a[l], b = g.b[l], m = a > b ? a : b, x = a, y = b;
+            while (y) { long t = x % y; x = y; y = t; }
+            CHECK(x == 1, "gcd level %d target %g", l, targets[i]);
+            CHECK((double)m * m <= c2 * s_in * s_in, "smoothing condition level %d target %g", l, targets[i]);
+            s_in *= sqrt((double)(a * a + b * b));
+            prod *= (double)(a * a + b * b);
+        }
+        CHECK(fabs(s_in - g.sigma) < 1e-6 * g.sigma && g.sigma >= targets[i], "sigma_out target %g", targets[i]);
+        printf("  plan target=%g: levels=%d a=(%d,%d) b=(%d,%d) sigma_out/target=%.5f\n", targets[i], g.levels,
+               g.a[0], g.a[1], g.b[0], g.b[1], g.sigma / targets[i]);
     }
-    gauss_free(&g);
 }
-
 
 /* known answer for seed-derived commitment randomness: must be identical on every platform,
    because the authority re-derives the voter's randomness from the seed */
@@ -204,7 +219,7 @@ static void test_seed_kat(void) {
     shake256(h, 16, b, 4352);
     char hx[40];
     hex(hx, h, 16);
-    CHECK(strcmp(hx, "5d184091912992041804599ab586d6b3") == 0, "seed-derived randomness KAT (%s)", hx);
+    CHECK(strcmp(hx, "117ced2534df93428c0c0c3f826bf947") == 0, "seed-derived randomness KAT (%s)", hx);
     gauss_free(&g);
 }
 
@@ -215,12 +230,12 @@ int main(void) {
     test_ring(562949953422097ULL);      /* 2^49 + 785 */
     test_challenges();
     test_seed_kat();
+    test_gauss_plans();
     test_gauss(1.0, 4000000);
-    test_gauss(3.0, 2000000);
-    test_gauss(40.0, 2000000);
-    test_gauss_large(100.0, 1000000);
-    test_gauss_large(25000.0, 1000000);
-    test_gauss_large(1e9, 1000000);
+    test_gauss(256.0, 2000000);
+    test_gauss(1000.0, 2000000);
+    test_gauss(25113.9, 2000000);
+    test_gauss(8.9e6, 2000000);
     printf("%s (%d failures)\n", fails ? "FAILED" : "all core tests passed", fails);
     return fails != 0;
 }

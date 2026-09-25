@@ -75,8 +75,10 @@ def main(folder):
                 out.append(f"| {nv} | {E} | {4 * E * last['r1b']:.0f} | {3 * E * last['r2b']:.0f} | {E * last['vb']:.0f} | — | extrapolated |")
         s, r_all, r_worst = rounds_model(1 / 3, 4, 4, 3)
         out.append(f"\nRounds (kappa = 4, attempt success 1/3): an authority succeeds in a round with probability {s:.2f}; "
-                   f"expected rounds {r_all:.2f} with 4 honest authorities, at most {r_worst:.2f} with 3. Responses of rounds "
-                   f"that fail are not published (announce-then-reveal): a failed round costs the computation of both rounds but no publication beyond round 1.\n")
+                   f"expected rounds {r_all:.2f} with 4 honest authorities, at most {r_worst:.2f} with 3. If fewer than t authorities "
+                   f"announce an attempt, no responses are published. If an announcing authority then posts no valid contribution, "
+                   f"the honest ones have already published theirs, the faulty one is excluded, and the round is repeated: at most n - t "
+                   f"extra rounds. The benchmark has no faulty authorities.\n")
     rej = os.path.join(folder, "ballot_rej_summary.csv")
     if os.path.exists(rej):
         out.append("## Ballot rejection experiment\n\n| n | L | log2 sigma_J | Ballots | Attempts (mean ± 95%) | max ‖s‖/T | Verified | GOF p | Independence p |\n|---|---|---|---|---|---|---|---|---|")

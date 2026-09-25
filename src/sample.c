@@ -56,104 +56,173 @@ void sample_uniform_poly(poly *r, prg *p) {
 
 /* ---------------- discrete Gaussian ---------------- */
 
-/* I(x) = sum_k p_k (1/2)^{2k}/(2k+1), where sum_k p_k u^{2k} = exp(-a u^2) cosh(b u),
-   a = 1/(2 sigma^2), b = x / sigma^2. Returns I(x) - 1 to keep precision. */
-static long double I_minus_1(double sigma, int64_t x) {
-    long double a = 1.0L / (2.0L * sigma * sigma), b = (long double)x / ((long double)sigma * sigma);
-    enum { K = 48 };
-    long double ea[K], cb[K];            /* (-a)^i/i!,  b^{2j}/(2j)! */
-    ea[0] = 1; cb[0] = 1;
-    for (int i = 1; i < K; i++) {
-        ea[i] = ea[i - 1] * (-a) / i;
-        cb[i] = cb[i - 1] * b * b / ((2.0L * i - 1) * (2.0L * i));
+#include "cdt_tables.h"
+
+/* |X| by a cumulative table T[0..len) of 192-bit entries: |X| = #{j : r >= T[j]} for r uniform in
+   [0, 2^192). r is drawn lazily: first its top 16 bits u; the entries with top 16 bits < u are all
+   <= r and those with top 16 bits > u are all > r, so only the entries whose top 16 bits equal u
+   (usually none) need more bits of r. The stream consumption depends only on the stream itself. */
+typedef struct { uint16_t *lt; } cdt_index;      /* lt[u] = #{j : top16(T[j]) < u}, u = 0..65536 */
+
+static void cdt_index_build(cdt_index *ix, const uint64_t (*tab)[3], int len) {
+    ix->lt = malloc(sizeof(uint16_t) * 65537);
+    int j = 0;
+    for (uint32_t u = 0; u <= 65536; u++) {
+        while (j < len && (tab[j][0] >> 48) < u) j++;
+        ix->lt[u] = (uint16_t)j;
     }
-    long double s = 0, pw = 1;           /* pw = (1/2)^{2k} */
-    for (int k = 1; k < K; k++) {
-        pw *= 0.25L;
-        long double pk = 0;
-        for (int i = 0; i <= k; i++) pk += ea[i] * cb[k - i];
-        s += pk * pw / (2.0L * k + 1);
-    }
-    return s;
 }
 
-double gauss_accept_prob(double sigma, int64_t x) {
-    long double s0 = I_minus_1(sigma, 0), sx = I_minus_1(sigma, x);
-    return (double)((1.0L + s0) / (1.0L + sx));
+static uint64_t prg_bits48(prg *p) {
+    uint8_t b[6];
+    prg_bytes(p, b, 6);
+    uint64_t x = 0;
+    for (int i = 5; i >= 0; i--) x = (x << 8) | b[i];
+    return x;
 }
 
-int gauss_init(gauss_sampler *g, double sigma) {
+static int64_t cdt_abs(prg *p, const uint64_t (*tab)[3], const cdt_index *ix) {
+    uint8_t b[2];
+    prg_bytes(p, b, 2);
+    uint32_t u = (uint32_t)b[0] | ((uint32_t)b[1] << 8);
+    int lo = ix->lt[u], hi = ix->lt[u + 1];
+    if (lo == hi) return lo;
+    /* rare: complete r and compare with the entries in [lo, hi) */
+    uint64_t w[3];
+    w[0] = ((uint64_t)u << 48) | prg_bits48(p);
+    int have = 1, x = lo;
+    for (int j = lo; j < hi; j++) {
+        int ge = 1;
+        for (int k = 0; k < 3; k++) {
+            if (have <= k) { w[k] = prg_u64(p); have = k + 1; }
+            if (w[k] != tab[j][k]) { ge = w[k] > tab[j][k]; break; }
+        }
+        if (!ge) break;
+        x = j + 1;
+    }
+    return x;
+}
+
+static cdt_index IX1, IX256;
+static void cdt_ready(void) {
+    if (!IX1.lt) cdt_index_build(&IX1, CDT_S1, CDT_S1_LEN);
+    if (!IX256.lt) cdt_index_build(&IX256, CDT_S256, CDT_S256_LEN);
+}
+
+typedef struct { uint64_t bits; int left; } signbits;
+
+static int64_t cdt_sample(prg *p, signbits *sb, const uint64_t (*tab)[3], const cdt_index *ix) {
+    int64_t x = cdt_abs(p, tab, ix);
+    if (x == 0) return 0;
+    if (sb->left == 0) { sb->bits = prg_u64(p); sb->left = 64; }
+    int neg = (int)(sb->bits & 1);
+    sb->bits >>= 1; sb->left--;
+    return neg ? -x : x;
+}
+
+/* eta = sqrt(ln(2 + 2^161)/pi) >= eta_eps(Z) for eps = 2^-160 (Gaussian parameter s = sqrt(2 pi) sigma).
+   The convolution theorem needs s_in >= sqrt(2) max(a,b) eta, i.e. max(a,b)^2 <= (pi/eta^2) sigma_in^2.
+   C2 = pi/eta^2 = pi^2 / ln(2 + 2^161), rounded down by a relative 1e-12 for safety. */
+static double conv_c2(void) { return (9.8696044010893586188 / (161.0 * 0.69314718055994530942)) * (1.0 - 1e-12); }
+
+static int64_t gcd64(int64_t a, int64_t b) { while (b) { int64_t t = a % b; a = b; b = t; } return a; }
+
+/* the best (a,b) with gcd 1, b <= a <= zmax, a^2+b^2 >= need, minimizing a^2+b^2; returns 0 if none */
+static int64_t best_pair(int64_t need, int64_t zmax, int32_t *pa, int32_t *pb) {
+    int64_t best = 0;
+    if (need < 2) need = 2;                      /* (1,1) is the smallest pair */
+    int64_t a0 = (int64_t)floor(sqrt((double)need / 2.0));
+    if (a0 < 1) a0 = 1;
+    while (a0 > 1 && 2 * (a0 - 1) * (a0 - 1) >= need) a0--;
+    for (int64_t a = a0; a <= zmax; a++) {
+        if (best && a * a >= best) break;        /* a^2 + b^2 > a^2 >= best */
+        int64_t rem = need - a * a, b;
+        if (rem <= 1) b = 1;
+        else {
+            b = (int64_t)floor(sqrt((double)rem));
+            while (b * b < rem) b++;
+            while (b > 1 && (b - 1) * (b - 1) >= rem) b--;
+        }
+        for (; b <= a; b++) if (gcd64(a, b) == 1) break;
+        if (b > a) continue;
+        int64_t v = a * a + b * b;
+        if (!best || v < best) { best = v; *pa = (int32_t)a; *pb = (int32_t)b; }
+    }
+    return best;
+}
+
+typedef struct { double target; gauss_sampler g; } plan_cache;
+static plan_cache CACHE[16];
+static int CACHE_N = 0;
+
+static int plan(gauss_sampler *g, double target) {
+    for (int i = 0; i < CACHE_N; i++) if (CACHE[i].target == target) { *g = CACHE[i].g; return 0; }
     memset(g, 0, sizeof *g);
-    if (!(sigma >= 1.0)) return -1;
-    g->sigma = sigma;
-    if (sigma < 64) {
-        g->use_table = 1;
-        g->xmax = (int)ceil(10 * sigma) + 2;
-        g->acc = malloc(sizeof(double) * (size_t)(g->xmax + 1));
-        if (!g->acc) return -1;
-        for (int x = 0; x <= g->xmax; x++) g->acc[x] = gauss_accept_prob(sigma, x);
-    } else {
-        /* for |x| <= 9 sigma: I(0)/I(x) >= (1 - 1/(24 s^2)) / (1 + 3.4/s^2) >= 1 - 4/s^2 */
-        g->fast = 1.0 - 4.0 / (sigma * sigma);
-    }
+    const double s0 = CDT_BASE_SIGMA, c2 = conv_c2();
+    if (target <= s0) { g->levels = 0; g->sigma = s0; goto done; }
+    /* n_total = (a1^2+b1^2)(a2^2+b2^2) must be >= need = ceil((target/s0)^2) */
+    double r = target / s0;
+    int64_t need = (int64_t)ceil(r * r);
+    int64_t zmax0 = (int64_t)floor(sqrt(c2 * s0 * s0));
+    int32_t a, b;
+    int64_t best = 0;
+    int64_t n1 = best_pair(need, zmax0, &a, &b);
+    if (n1) { best = n1; g->levels = 1; g->a[0] = a; g->b[0] = b; }
+    for (int64_t a1 = 1; a1 <= zmax0; a1++)
+        for (int64_t b1 = 1; b1 <= a1; b1++) {
+            if (gcd64(a1, b1) != 1) continue;
+            int64_t m1 = a1 * a1 + b1 * b1;
+            int64_t zmax1 = (int64_t)floor(sqrt(c2 * s0 * s0 * (double)m1));
+            int64_t need2 = (need + m1 - 1) / m1;
+            if (best && m1 * 2 >= best) continue;          /* level 2 adds a factor >= 2 */
+            int32_t a2, b2;
+            int64_t m2 = best_pair(need2, zmax1, &a2, &b2);
+            if (!m2) continue;
+            if (!best || m1 * m2 < best) {
+                best = m1 * m2; g->levels = 2;
+                g->a[0] = (int32_t)a1; g->b[0] = (int32_t)b1; g->a[1] = a2; g->b[1] = b2;
+            }
+        }
+    if (!best) return -1;
+    g->sigma = s0 * sqrt((double)best);
+done:
+    if (CACHE_N < 16) { CACHE[CACHE_N].target = target; CACHE[CACHE_N].g = *g; CACHE_N++; }
     return 0;
 }
 
-void gauss_free(gauss_sampler *g) { free(g->acc); g->acc = NULL; }
+double gauss_round_sigma(double sigma) {
+    if (sigma == 1.0) return 1.0;
+    gauss_sampler g;
+    if (plan(&g, sigma)) return -1.0;
+    return g.sigma;
+}
 
-static double normal01(gauss_sampler *g, prg *p) {
-    if (g->has_spare) { g->has_spare = 0; return g->spare; }
-    double u1 = prg_unif(p), u2 = prg_unif(p);
-    /* refine small u1 (the tail of the radius) to 106-bit resolution, so that the discrete set of
-       radii is fine enough for every sigma used here (sigma < 2^40) */
-    if (u1 < 0x1p-20) u1 = (u1 * 0x1p53 - 1.0 + prg_unif(p)) * 0x1p-53;
-    double rad = sqrt(-2.0 * log(u1)), th = 6.283185307179586476925 * u2;
-    g->spare = rad * sin(th);
-    g->has_spare = 1;
-    return rad * cos(th);
+int gauss_init(gauss_sampler *g, double sigma) {
+    cdt_ready();
+    memset(g, 0, sizeof *g);
+    if (sigma == 1.0) { g->sigma = 1.0; g->levels = -1; return 0; }
+    if (!(sigma > 1.0)) return -1;
+    return plan(g, sigma);
+}
+
+void gauss_free(gauss_sampler *g) { (void)g; }
+
+static int64_t conv_sample(const gauss_sampler *g, prg *p, signbits *sb, int level) {
+    if (level == 0) return cdt_sample(p, sb, CDT_S256, &IX256);
+    int64_t x = conv_sample(g, p, sb, level - 1), y = conv_sample(g, p, sb, level - 1);
+    return (int64_t)g->a[level - 1] * x + (int64_t)g->b[level - 1] * y;
 }
 
 int64_t gauss_sample(gauss_sampler *g, prg *p) {
-    for (;;) {
-        double y = g->sigma * normal01(g, p);
-        int64_t x = (int64_t)llround(y);
-        int64_t ax = x < 0 ? -x : x;
-        double u = prg_unif(p);
-        if (g->use_table) {
-            if (ax > g->xmax) continue;          /* never happens: Box-Muller gives |y| < 8.6 sigma */
-            if (u <= g->acc[ax]) return x;
-        } else {
-            if (u < g->fast) return x;
-            if (u <= gauss_accept_prob(g->sigma, ax)) return x;
-        }
-    }
+    signbits sb = {0, 0};
+    if (g->levels < 0) return cdt_sample(p, &sb, CDT_S1, &IX1);
+    return conv_sample(g, p, &sb, g->levels);
 }
 
-/* D_{Z,1} by an integer cumulative distribution table: CDT[x] = floor(2^64 Pr[|X| <= x]).
-   Integer-only, hence identical on every platform (the randomness of a share is re-derived from
-   its seed by the authority); statistical distance at most about 2^-60 per sample. */
-static const uint64_t CDT1[9] = {7359186107371418017ULL, 16286330116675483855ULL, 18278245189139596012ULL,
-                                 18441751535121735928ULL, 18446688998943340873ULL, 18446743849211842779ULL,
-                                 18446744073372353484ULL, 18446744073709365182ULL, 18446744073709551578ULL};
-static void gauss1_vec(prg *p, int64_t *out, size_t n) {
-    uint8_t sb = 0;
-    for (size_t i = 0; i < n; i++) {
-        uint64_t r = prg_u64(p);
-        int64_t x = 0;
-        for (int j = 0; j < 9; j++) x += (r >= CDT1[j]);
-        if ((i & 7) == 0) prg_bytes(p, &sb, 1);
-        int neg = (sb >> (i & 7)) & 1;
-        out[i] = (neg && x) ? -x : x;
-    }
-}
-
-/* the Box-Muller spare is discarded at both ends, so that a vector depends only on the
-   stream it is drawn from (needed when randomness is re-derived from a seed) */
 void gauss_vec(gauss_sampler *g, prg *p, int64_t *out, size_t n) {
-    if (g->sigma == 1.0) { gauss1_vec(p, out, n); return; }
-    g->has_spare = 0;
-    for (size_t i = 0; i < n; i++) out[i] = gauss_sample(g, p);
-    g->has_spare = 0;
+    signbits sb = {0, 0};
+    if (g->levels < 0) { for (size_t i = 0; i < n; i++) out[i] = cdt_sample(p, &sb, CDT_S1, &IX1); return; }
+    for (size_t i = 0; i < n; i++) out[i] = conv_sample(g, p, &sb, g->levels);
 }
 
 /* ---------------- challenges ---------------- */

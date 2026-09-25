@@ -10,7 +10,7 @@ void ev_params_init(ev_params *ep, const tv_params *p) {
     /* shift f r with r = sum of n independent D_sigma vectors: tr = 60 N mu n, ||Sigma|| <= 3600 n */
     double tr = 60.0 * TV_N * p->mu * p->n, lam = 3600.0 * p->n, tau = p->tau_bits * log(2.0);
     ep->T = p->sigma * sqrt(tr + 2.0 * sqrt(tr * lam * tau) + 2.0 * lam * tau);
-    ep->sigma_OR = p->alpha * ep->T;
+    ep->sigma_OR = gauss_round_sigma(p->alpha * ep->T);
     ep->logM = p->logM;
     ep->B_OR = 2.0 * ep->sigma_OR * sqrt(2.0 * (double)VN(p));
 }

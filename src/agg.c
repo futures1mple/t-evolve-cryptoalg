@@ -109,8 +109,8 @@ void agg_params_init(agg_params *ap, const tv_params *p, long nleaves, c2_mode m
     ap->T1 = sqrt(T1sq);
     if (mode == C2_SIGNED) ap->T2 = sqrt(ap->ell * Fsum + 2.0 * sqrt(ap->ell * Fsq * ap->tau) + 2.0 * Fmax * ap->tau);
     else ap->T2 = sqrt(T2bin);
-    ap->sigma1 = ap->alpha * ap->T1;
-    ap->sigma2 = ap->alpha * ap->T2;
+    ap->sigma1 = gauss_round_sigma(ap->alpha * ap->T1);   /* achievable sigma >= alpha T */
+    ap->sigma2 = gauss_round_sigma(ap->alpha * ap->T2);
     free(blk);
     tree_free(&t);
 }

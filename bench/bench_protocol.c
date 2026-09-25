@@ -305,7 +305,7 @@ static void bench_agg(int NV, int n, int t, int d, uint64_t q, c2_mode mode) {
     row1("agg", "published round 1 per authority per round", cfg, (double)by1 / (part * rounds) / 1024, "KiB");
     row1("agg", "published round 2 per successful authority", cfg, (double)by2 / (nsucc ? nsucc : 1) / 1024, "KiB");
     row1("agg", "published per ballot per authority", cfg, ((double)by1 / (part * rounds) + (double)by2 / (nsucc ? nsucc : 1)) / NV / 1024, "KiB");
-    row1("agg", "responses withheld in failed rounds (not published)", cfg, (double)by_failed / 1024, "KiB");
+    row1("agg", "responses of non-aborting attempts in rounds that failed (not published: fewer than t announced)", cfg, (double)by_failed / 1024, "KiB");
     row1("agg", "tally correct and all VerAgg ok", cfg, allok, "bool");
     for (int k = 0; k < n; k++) { agg_state_free(&st[k]); agg_contrib_free(&c[k]); }
     free(c); free(st); free(succ); free(lc); free(lm); free(lr);
