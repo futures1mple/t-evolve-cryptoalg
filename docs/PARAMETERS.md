@@ -132,8 +132,9 @@ commitments is bound into `G` and into the digest of `BB_1`.
 
 ## 4. Choice of (d, q) (`tools/chain.py`)
 
-For every `N_V` and ballot format, the smallest `d` and, for it, the smallest prime
-`q = 17 (mod 32)` above `beta_SIS` with both estimates at least `2^128`, using the lattice estimator
+For every `N_V` and ballot format, the smallest `d` and, for it, the smallest bit length `b` such
+that the largest prime `q = 17 (mod 32)` below `2^b` exceeds `beta_SIS` and both estimates are at
+least `2^128` (elements of `Z_q` then take exactly `b` bits), using the lattice estimator
 (commit 53da598), MATZOV cost model for M-LWE (`n = dN`, `m = (d+L)N`, secret and error `D_1`) and the
 Euclidean norm for M-SIS (`n = dN`, `m = mu N`). Every estimate, with all attacks, is written to
 `results/params_chain_*.jsonl`.

@@ -315,7 +315,7 @@ static void bench_agg(int NV, int n, int t, int d, uint64_t q, c2_mode mode) {
 int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
     int NV = 1000, reps = 30, d = 7, skip_agg = 0, only_agg = 0;
-    uint64_t q = 4398046511953ULL;    /* 2^42 + 849: the set chosen by tools/chain.py for N_V = 10^4 */
+    uint64_t q = 4398046510961ULL;    /* 2^42 - 143: the set chosen by tools/chain.py for N_V = 10^4 */
     const char *out = "results/bench.csv";
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-nv") && i + 1 < argc) NV = atoi(argv[++i]);

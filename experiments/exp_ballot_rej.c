@@ -79,11 +79,11 @@ int main(int argc, char **argv) {
     uint64_t seed = argc > 2 ? strtoull(argv[2], NULL, 10) : 1;
     const char *outdir = argc > 3 ? argv[3] : "results";
     struct { int n, t, L, w, d; uint64_t q; } cfg[] = {
-        {4, 3, 1, TV_W_FREE, 7, 4398046511953ULL},
-        {4, 3, 2, 1, 7, 4398046511953ULL},
-        {4, 3, 5, 1, 7, 4398046511953ULL},
-        {4, 3, 10, 1, 7, 4398046511953ULL},
-        {5, 3, 1, TV_W_FREE, 7, 4398046511953ULL},
+        {4, 3, 1, TV_W_FREE, 7, 4398046510961ULL},
+        {4, 3, 2, 1, 7, 4398046510961ULL},
+        {4, 3, 5, 1, 7, 4398046510961ULL},
+        {4, 3, 10, 1, 7, 4398046510961ULL},
+        {5, 3, 1, TV_W_FREE, 7, 4398046510961ULL},
     };
     int ncfg = sizeof cfg / sizeof cfg[0];
     char path[512];

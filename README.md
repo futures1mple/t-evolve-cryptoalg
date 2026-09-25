@@ -103,9 +103,12 @@ Chosen by `tools/chain.py` (signed second challenge, seed-derived share randomne
 
 | N_V | d | q | beta_SIS | M-LWE (hiding) | M-SIS (binding) | Ballot, yes/no | Ballot, 1 of 2 | Authority, per ballot |
 |---|---|---|---|---|---|---|---|---|
-| 10^4 | 7 | 2^42 + 849 | 2^41.2 | 2^138.4 | 2^147.6 | 109.0 KiB | 137.1 KiB | 27.9 KiB |
-| 10^5 | 7 | 2^43 + 305 | 2^42.5 | 2^135.0 | 2^140.9 | 110.2 KiB | 138.5 KiB | 27.9 KiB |
-| 10^6 | 7 | 2^45 + 2769 | 2^44.1 | 2^128.9 | 2^137.1 | 112.7 KiB | 141.4 KiB | 29.5 KiB |
+| 10^4 | 7 | 2^42 - 143 | 2^41.2 | 2^138.4 | 2^147.6 | 107.7 KiB | 135.7 KiB | 27.9 KiB |
+| 10^5 | 7 | 2^43 - 175 | 2^42.5 | 2^135.0 | 2^140.9 | 109.0 KiB | 137.1 KiB | 27.9 KiB |
+| 10^6 | 7 | 2^45 - 591 | 2^44.1 | 2^128.9 | 2^137.1 | 111.5 KiB | 140.0 KiB | 29.5 KiB |
+
+`q` is the largest prime `q = 17 (mod 32)` below `2^b`, for the smallest `b` with `q > beta_SIS` and both
+estimates at least `2^128`, so that elements of `Z_q` take exactly `b` bits.
 
 Sizes are those of the encoding in `src/codec.c` (for N_V = 10^4 they coincide with the measured encodings); the
 seed ciphertexts are counted with their 32-byte payload only. The benchmarks use the set for

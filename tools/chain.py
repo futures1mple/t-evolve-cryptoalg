@@ -3,7 +3,8 @@
 
 For every number of voters N_V and every ballot format, takes the bounds computed by
 build/param_report (the same C code as the implementation), searches the smallest module rank d
-and, for it, the smallest prime q = 17 (mod 32) above beta_SIS such that the lattice estimator
+and, for it, the smallest bit length logq and the largest prime q = 17 (mod 32) below 2^logq
+with q > beta_SIS such that the lattice estimator
 reports at least 2^128 for both M-LWE (hiding) and M-SIS (binding), and writes every estimator
 result (all attacks, not only the minimum) to a JSON-lines log.
 
@@ -54,6 +55,14 @@ def prime_above(logq):
     return q
 
 
+def prime_below(logq):
+    """Largest prime q = 17 (mod 32) below 2^logq, so that elements of Z_q take exactly logq bits."""
+    q = 2 ** logq - 15
+    while not is_prime(q):
+        q -= 32
+    return q
+
+
 def report(NV, n, t, L, w, d, q):
     mode = "1" if MODE == "signed" else "0"
     out = subprocess.run(["./build/param_report", str(NV), str(n), str(t), str(L), str(w), str(d), str(q), mode, LOGQ],
@@ -92,10 +101,12 @@ def main():
                 r0 = report(NV, n, t, L, w, d, prime_above(40))
                 lq0 = math.floor(r0["log2beta"]) + 1
                 for logq in range(lq0, lq0 + 4):
-                    if logq >= 50:
+                    if logq > 50:
                         break
-                    q = prime_above(logq)
+                    q = prime_below(logq)
                     r = report(NV, n, t, L, w, d, q)
+                    if r["beta_SIS"] >= q:
+                        continue
                     h, b, lb, sb, dt = estimate(d, L, q, r["beta_SIS"])
                     rec = dict(r, hiding_bits=h, binding_bits=b, lwe_attacks=lb, sis_attacks=sb, seconds=round(dt, 1))
                     f.write(json.dumps(rec) + "\n")
