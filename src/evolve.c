@@ -110,7 +110,7 @@ int ev_vote(ev_ballot *b, poly *shares, int64_t *rnd, int *attempts, const tv_pu
     for (int j = 0; j < n; j++) {
         uint8_t s[32];
         prg_bytes(&g, s, 32);
-        tv_rand_from_seed(rnd + (size_t)j * vn, p, s);
+        tv_rand_from_seed(rnd + (size_t)j * vn, pub, id, j + 1, s);
         tv_commit(&b->c[(size_t)j * rows], pub, &shares[j], rnd + (size_t)j * vn);
         stub_enc(b->e + (size_t)j * TV_CT_BYTES, &keys[j], id, s);
     }

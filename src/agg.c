@@ -95,7 +95,8 @@ void agg_params_init(agg_params *ap, const tv_params *p, long nleaves, c2_mode m
             if (!blk[e].zero) { v = 1; g = (u < t.nleaves) ? 1 : 0; }
             else { v = 1 + t.nchild[u]; g = (blk[e].level == 1) ? t.nchild[u] : 0; }
             double tc = ap->tau + log(ncols) + g * lnQ;
-            T1sq += s2 * v * hkz(60.0 * Nmu, 3600.0, tc);          /* ||c1 s_col||^2 */
+            /* c1 = H_agg(par, BB_1) can be steered by the adversary among its queries: one more ln Q */
+            T1sq += s2 * v * hkz(60.0 * Nmu, 3600.0, tc + lnQ);    /* ||c1 s_col||^2 */
             Fe += s2 * v * hkz(Nmu, 1.0, tc);                      /* ||s_col||^2 */
         }
         Fsum += Fe; Fsq += Fe * Fe; if (Fe > Fmax) Fmax = Fe;

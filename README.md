@@ -8,6 +8,10 @@ e-voting protocol EVOLVE, and of EVOLVE's ballot on the same code base, for the 
 It implements the protocol, runs the experiments and benchmarks reported in the paper, and
 computes the parameters from the actual witnesses of the proofs (`docs/PARAMETERS.md`).
 
+Repository: https://github.com/futures1mple/t-evolve-cryptoalg
+
+    git clone https://github.com/futures1mple/t-evolve-cryptoalg.git
+
 **This is research code.** It is not constant-time, it has not been audited, and the public-key
 encryption of the seeds is a placeholder (see *Scope*). Do not use it to run elections.
 
@@ -99,11 +103,11 @@ Chosen by `tools/chain.py` (signed second challenge, seed-derived share randomne
 
 | N_V | d | q | beta_SIS | M-LWE (hiding) | M-SIS (binding) | Ballot, yes/no | Ballot, 1 of 2 | Authority, per ballot |
 |---|---|---|---|---|---|---|---|---|
-| 10^4 | 7 | 2^42 + 849 | 2^41.2 | 2^138.4 | 2^147.6 | 107.7 KiB | 135.7 KiB | 27.9 KiB |
-| 10^5 | 7 | 2^43 + 305 | 2^42.5 | 2^135.0 | 2^140.9 | 109.0 KiB | 137.1 KiB | 27.9 KiB |
-| 10^6 | 7 | 2^45 + 2769 | 2^44.1 | 2^128.9 | 2^137.1 | 111.5 KiB | 140.0 KiB | 29.4 KiB |
+| 10^4 | 7 | 2^42 + 849 | 2^41.2 | 2^138.4 | 2^147.6 | 109.0 KiB | 137.1 KiB | 27.9 KiB |
+| 10^5 | 7 | 2^43 + 305 | 2^42.5 | 2^135.0 | 2^140.9 | 110.2 KiB | 138.5 KiB | 27.9 KiB |
+| 10^6 | 7 | 2^45 + 2769 | 2^44.1 | 2^128.9 | 2^137.1 | 112.7 KiB | 141.4 KiB | 29.5 KiB |
 
-Sizes are those of the encoding in `src/codec.c` (the measured encodings agree to within 2%); the
+Sizes are those of the encoding in `src/codec.c` (for N_V = 10^4 they coincide with the measured encodings); the
 seed ciphertexts are counted with their 32-byte payload only. The benchmarks use the set for
 `N_V = 10^4` unless `-d` and `-q` are given.
 

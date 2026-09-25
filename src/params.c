@@ -28,7 +28,7 @@ int tv_params_init(tv_params *p, int n, int t, int L, int w, int d, uint64_t q) 
     p->rows = d + L;
     p->sigma = 1.0;
     p->alpha = 11.0;
-    p->tau_bits = 128.0 + 40.0;        /* 2^-128 per attempt, union over 2^40 attempts */
+    p->tau_bits = 128.0 + 40.0;        /* 2^-168 per attempt, hence 2^-128 over 2^40 attempts */
     p->T = shift_bound(TV_N, p->mu, n, L, p->sigma, p->tau_bits * log(2.0));
     p->sigma_J = p->alpha * p->T;
     p->logM = 12.0 / p->alpha + 1.0 / (2.0 * p->alpha * p->alpha);

@@ -6,12 +6,18 @@
 2. Открыть из меню «Пуск» **MSYS2 UCRT64** и выполнить:
 
        pacman -Syu
-       pacman -S mingw-w64-ucrt-x86_64-gcc git
+       pacman -S mingw-w64-ucrt-x86_64-gcc
 
    (если после первой команды окно закроется, откройте его снова и повторите вторую).
 3. Добавить `C:\msys64\ucrt64\bin` в переменную среды `PATH`: «Пуск» → «Изменение системных
    переменных среды» → «Переменные среды» → `Path` → «Создать».
 4. Проверить в обычной командной строке (`cmd`): `gcc --version` печатает версию.
+
+## 1а. Скачать код
+
+Проще всего через GitHub Desktop: File → Clone repository → `futures1mple/t-evolve-cryptoalg`.
+Другой вариант — на странице https://github.com/futures1mple/t-evolve-cryptoalg нажать
+Code → Download ZIP и распаковать (тогда в результатах будет `commit: unknown` — это не страшно).
 
 ## 2. Подготовить компьютер
 
@@ -21,7 +27,7 @@
 
 ## 3. Запустить
 
-В `cmd`, из папки репозитория `t-evolve`:
+В `cmd`, из папки репозитория `t-evolve-cryptoalg`:
 
     scripts\build_windows.bat
     scripts\run_windows.bat

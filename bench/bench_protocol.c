@@ -238,7 +238,7 @@ static void bench_agg(int NV, int n, int t, int d, uint64_t q, c2_mode mode) {
             uint8_t sd[32];
             prg_bytes(&g, sd, 32);
             size_t idx = (size_t)(k - 1) * NV + (size_t)i;
-            tv_rand_from_seed(lr + idx * vn, &prm, sd);
+            tv_rand_from_seed(lr + idx * vn, &pub, (uint64_t)i, k, sd);
             lm[idx] = sec.m[k];
             tv_commit(lc + idx * prm.rows, &pub, &lm[idx], lr + idx * vn);
         }

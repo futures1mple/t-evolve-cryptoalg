@@ -27,7 +27,10 @@ Rademacher vectors (entries ±1) are 1-subgaussian, so the same bound applies to
 ## 2. Ballot proof (`src/params.c`, `src/ballot.c`)
 
 **Witnesses.** The voter's own randomness `r_0, ..., r_n`, each `D_sigma^{N mu}`; with the
-seed variant, `r_k = SampleD_sigma(SHAKE256(0x20 || s_k))` for `k >= 1`.
+seed variant, `r_k = SampleD_sigma(X(par, id, k, s_k))` for `k >= 1`, where `X` is SHAKE256
+with domain byte 0x20 over (parameter digest || id || k || s_k). The inputs of `X` differ for
+different `(id, k)`, so the leaves of one aggregation column are independent even if a voter
+reuses a seed (Section 5 below).
 
 **Shift.** `s = (c r_0, ..., c r_n, f_1 r_0, ..., f_L r_0)`, where `c` and the `f_a` have 60
 coefficients in {-1, 1}. For fixed challenges `s = Phi r` with
@@ -58,7 +61,9 @@ responses exceeds it with probability below `2^{-N mu (n+1+2L)/4}` [BL17, (18)].
 **Witnesses.** For authority `k`:
 
 * `Pi_open`, one column per node: the leaf randomness `r_{x,k}` (seed-derived, so distributed as
-  `D_sigma` up to the adversary's choice of seeds) and the fresh randomness `rho_u` of inner nodes.
+  `D_sigma` up to the adversary's choice of seeds; the inputs `(par, id, k, s)` of `X` are pairwise
+  distinct across leaves, so in the ROM different leaves are independent even for equal seeds) and
+  the fresh randomness `rho_u` of inner nodes.
 * `Pi_zero`, one column per inner node: `rho_u - sum_{children} r_child`, a sum of `1 + #children`
   independent vectors. A node's randomness appears in its own `Pi_open` column, its own `Pi_zero`
   column and its parent's `Pi_zero` column, so columns of different proofs and levels are
@@ -72,8 +77,9 @@ number of children for a level-1 column of `Pi_zero`, 0 otherwise).
 
 **First shift** `B1 = (c_{1,e} s)_{columns}`: no mixing across columns. Per column, with
 variance multiplicity `v` (1, or `1 + #children`):
-`||c1 s_col||^2 <= sigma^2 v hkz(60 N mu, 3600, tau_col)`; `T1^2` is the sum over all columns
-(the union over columns is included in `tau_col`). This bounds the Frobenius norm directly and is
+`||c1 s_col||^2 <= sigma^2 v hkz(60 N mu, 3600, tau_col + ln Q)`; `T1^2` is the sum over all columns
+(the union over columns is included in `tau_col`; the extra `ln Q` covers the adversary's ability to
+steer `c1 = H_agg(par, BB_1)` through its own posts in round 1). This bounds the Frobenius norm directly and is
 tighter than the route through `s_part` in [BL17, (22)].
 
 **Second shift** `B2 = (S_e C_{2,e})_e`. With a binary `C2` (as in [BL17]) the columns of `C2`

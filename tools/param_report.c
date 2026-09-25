@@ -50,11 +50,11 @@ int main(int argc, char **argv) {
     if (t_or > beta) beta = t_or;
     if (betaBL > beta) beta = betaBL;
     /* sizes */
-    double logq = log2((double)q);
-    double com_bytes = (n + 1) * p.rows * N * logq / 8;
+    double logq = log2((double)q), qbits = (double)RING.logq;   /* packed encoding uses ceil(log2 q) bits */
+    double com_bytes = (n + 1) * p.rows * N * qbits / 8;
     double proof_bytes = (32 + ((n + 1) + 2.0 * L) * Nmu * rice_bits(p.sigma_J) / 8 + L * 68);
     double ct_bytes = n * 32;
-    double auth_r1 = (ap.ninner * p.rows * N * logq + L * N * logq) / 8 + ap.kappa * 32;
+    double auth_r1 = (ap.ninner * p.rows * N * qbits + L * N * qbits) / 8 + ap.kappa * 32;
     double auth_r2 = 33 + ((double)(ap.nnodes + ap.ninner) * Nmu * rice_bits(ap.sigma1) + (double)ap.E * Nmu * ap.ell * rice_bits(ap.sigma2)) / 8 + Nmu * 3 / 8;
     printf("{\"NV\":%ld,\"n\":%d,\"t\":%d,\"L\":%d,\"w\":%d,\"d\":%d,\"q\":%llu,\"log2q\":%.3f,\"mode\":\"%s\",\"logQ\":%.0f,",
            NV, n, t, L, w, d, (unsigned long long)q, logq, mode == C2_SIGNED ? "signed" : "binary", logQ);

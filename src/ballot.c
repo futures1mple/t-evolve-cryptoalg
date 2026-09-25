@@ -25,10 +25,19 @@ void tv_secret_free(tv_voter_secret *s) { free(s->m); free(s->r); free(s->seeds)
 
 double tv_beta(const tv_params *p) { return 2.0 * p->sigma * sqrt((double)VN(p)); }
 
-void tv_rand_from_seed(int64_t *r, const tv_params *p, const uint8_t seed[32]) {
+/* r = SampleD_sigma(X(par, id, k, s)): the input is domain-separated by the parameters, the voter
+   identity and the authority index, so that a seed reused in several ballots or shares yields
+   independent randomness (needed by the bounds on the aggregation witnesses) */
+void tv_rand_from_seed(int64_t *r, const tv_pub *pub, uint64_t id, int k, const uint8_t seed[32]) {
+    const tv_params *p = &pub->prm;
+    uint8_t in[TV_HASHBYTES + 12 + 32];
+    memcpy(in, pub->digest, TV_HASHBYTES);
+    for (int i = 0; i < 8; i++) in[TV_HASHBYTES + i] = (uint8_t)(id >> (8 * i));
+    for (int i = 0; i < 4; i++) in[TV_HASHBYTES + 8 + i] = (uint8_t)((uint32_t)k >> (8 * i));
+    memcpy(in + TV_HASHBYTES + 12, seed, 32);
     prg g;
     gauss_sampler gs;
-    prg_init(&g, 0x20, seed, 32);
+    prg_init(&g, 0x20, in, sizeof in);
     gauss_init(&gs, p->sigma);
     gauss_vec(&gs, &g, r, VN(p));
     gauss_free(&gs);
@@ -171,7 +180,7 @@ int tv_vote(tv_ballot *b, tv_voter_secret *sec, tv_prove_stats *stats, const tv_
     gauss_vec(&g1, &g, sec->r, vn);
     for (int k = 1; k <= n; k++) {
         prg_bytes(&g, sec->seeds + (size_t)(k - 1) * 32, 32);
-        tv_rand_from_seed(sec->r + (size_t)k * vn, p, sec->seeds + (size_t)(k - 1) * 32);
+        tv_rand_from_seed(sec->r + (size_t)k * vn, pub, id, k, sec->seeds + (size_t)(k - 1) * 32);
     }
     for (int j = 0; j <= n; j++) tv_commit(&b->c[(size_t)j * rows], pub, &sec->m[(size_t)j * L], sec->r + (size_t)j * vn);
     /* 3. encryption of the seeds */
@@ -332,7 +341,7 @@ int tv_check_share(const tv_pub *pub, const tv_akey *key, int k, const tv_ballot
     const tv_params *p = &pub->prm;
     uint8_t seed[32];
     pke_stub(seed, key, b->id, b->e + (size_t)(k - 1) * TV_CT_BYTES);
-    tv_rand_from_seed(r_k, p, seed);
+    tv_rand_from_seed(r_k, pub, b->id, k, seed);
     if (sqrt(sqnorm(r_k, VN(p))) > tv_beta(p)) return 0;
     poly *cr = malloc(sizeof(poly) * p->rows);
     poly *rh = malloc(sizeof(poly) * p->mu);

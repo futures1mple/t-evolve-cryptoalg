@@ -1,6 +1,8 @@
 /* Ballots of T-EVOLVE with the EVOLVE-style ballot proof (Section 6 of the paper), in the
  * variant where the randomness of share k is derived from a seed s_k and only s_k is
- * encrypted to authority k:  r_k = SampleD_sigma(SHAKE256(0x20 || s_k)). */
+ * encrypted to authority k:  r_k = SampleD_sigma(X(par, id, k, s_k)), where X is SHAKE256 with
+ * domain byte 0x20 over (parameter digest || id || k || s_k). Binding id and k into X keeps the
+ * leaves of one aggregation column independent even if a voter reuses a seed. */
 #ifndef TV_BALLOT_H
 #define TV_BALLOT_H
 
@@ -50,8 +52,8 @@ int tv_verify_ballot(const tv_pub *pub, const tv_ballot *b);
 int tv_check_share(const tv_pub *pub, const tv_akey *key, int k, const tv_ballot *b, poly *m_k, int64_t *r_k);
 double tv_beta(const tv_params *p);
 
-/* derive r from a seed */
-void tv_rand_from_seed(int64_t *r, const tv_params *p, const uint8_t seed[32]);
+/* derive r = SampleD_sigma(X(par, id, k, seed)) */
+void tv_rand_from_seed(int64_t *r, const tv_pub *pub, uint64_t id, int k, const uint8_t seed[32]);
 
 /* serialization; sizes in bytes of the three parts */
 typedef struct { size_t total, commitments, ciphertexts, proof; } tv_sizes;
