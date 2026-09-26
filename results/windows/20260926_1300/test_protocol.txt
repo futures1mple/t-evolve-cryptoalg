@@ -1,0 +1,19 @@
+ballots: n=4 t=3 L=1 w=-1 d=8 logq=47
+ballots: n=5 t=3 L=2 w=1 d=8 logq=47
+ballots: n=3 t=2 L=3 w=2 d=7 logq=42
+EVOLVE ballots on the same core
+aggregation: NV=70 n=4 t=3 L=2 C2=signed
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=signed logQ=64 E=3 (open 1, zero 2) nodes=74
+  T1=2^15.26 T2=2^15.43 sigma1=2^20.08 sigma2=2^20.25
+  authority 1 round 2: ok after 3 attempts, ||B1||/T1=0.165 ||B2||/T2=0.429, 1510 ms, 21111297 bytes
+  authority 2 round 2: ok after 3 attempts, ||B1||/T1=0.165 ||B2||/T2=0.430, 1494 ms, 21111344 bytes
+  authority 3 round 2: ok after 1 attempts, ||B1||/T1=0.164 ||B2||/T2=0.430, 491 ms, 21111277 bytes
+  authority 4 round 2: ok after 2 attempts, ||B1||/T1=0.164 ||B2||/T2=0.429, 986 ms, 21111340 bytes
+aggregation: NV=35 n=4 t=3 L=2 C2=binary
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=binary logQ=64 E=3 (open 1, zero 2) nodes=38
+  T1=2^14.97 T2=2^16.20 sigma1=2^19.78 sigma2=2^21.01
+  authority 1 round 2: ok after 2 attempts, ||B1||/T1=0.146 ||B2||/T2=0.130, 920 ms, 21397335 bytes
+  authority 2 round 2: ok after 1 attempts, ||B1||/T1=0.145 ||B2||/T2=0.129, 472 ms, 21397111 bytes
+  authority 3 round 2: no attempt after 4 attempts, ||B1||/T1=0.145 ||B2||/T2=0.130, 1808 ms, 1 bytes
+  authority 4 round 2: ok after 2 attempts, ||B1||/T1=0.144 ||B2||/T2=0.130, 928 ms, 21396949 bytes
+all protocol tests passed (0 failures)

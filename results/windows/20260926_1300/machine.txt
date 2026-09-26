@@ -1,0 +1,30 @@
+
+
+Name          : Intel(R) Core(TM) i9-14900HX
+NumberOfCores : 24
+MaxClockSpeed : 2200
+
+
+
+
+
+Capacity : 17179869184
+Speed    : 5600
+
+
+
+Get-CimInstance : Only administrators have permission to add, remove, or configure server software during a Terminal services remote session. If you want to install or configure software on the 
+server, contact your network administrator. 
+At line:1 char:149
++ ... ity,Speed; (Get-CimInstance Win32_PowerPlan -Namespace root\cimv2\pow ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Get-CimInstance], CimException
+    + FullyQualifiedErrorId : HRESULT 0x80070668,Microsoft.Management.Infrastructure.CimCmdlets.GetCimInstanceCommand
+ 
+gcc (Rev13, Built by MSYS2 project) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+Microsoft Windows [Version 10.0.26200.9457]
