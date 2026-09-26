@@ -28,12 +28,12 @@ int tv_params_init(tv_params *p, int n, int t, int L, int w, int d, uint64_t q) 
     p->mu = 2 * d + L;
     p->rows = d + L;
     p->sigma = 1.0;
-    p->alpha = 11.0;
-    p->tau_bits = 128.0 + 40.0;        /* 2^-168 per attempt, hence 2^-128 over 2^40 attempts */
+    p->alpha = 141.0 / 10.0;           /* sigma_J = alpha T with M = exp(r/alpha + 1/(2 alpha^2)), r = 309/20 */
+    p->tau_bits = 171.0;               /* 2^-171 per attempt (budget: docs/PARAMETERS.md, Section 7) */
     p->T = shift_bound(TV_N, p->mu, n, L, p->sigma, p->tau_bits * log(2.0));
     p->sigma_J = gauss_round_sigma(p->alpha * p->T);   /* achievable sigma >= alpha T */
     p->sigma_J2 = gauss_sigma2(p->sigma_J);
-    p->logM_num = 265; p->logM_den = 242;               /* 12/11 + 1/242 for alpha = 11 */
+    p->logM_num = 43669; p->logM_den = 39762;           /* r/alpha + 1/(2 alpha^2) = 103/94 + 50/19881, M = 2.9989 */
     p->logM = (double)p->logM_num / (double)p->logM_den;
     p->B_J = 2.0 * p->sigma_J * sqrt((double)tv_resp_coeffs(p));
     p->B_J2 = 4 * p->sigma_J2 * (uint64_t)tv_resp_coeffs(p);

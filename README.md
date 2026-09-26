@@ -21,7 +21,7 @@ encryption of the seeds is a placeholder (see *Scope*). Do not use it to run ele
 |---|---|---|
 | SHAKE128/256 (FIPS 202) | `src/keccak.c` | — |
 | `R_q = Z_q[X]/(X^256+1)`, `q = 17 mod 32` prime `< 2^50`, 3-level partial NTT, Montgomery arithmetic | `src/ring.c` | §6, choice of `q` |
-| Discrete Gaussian samplers with bounded error (192-bit tables, convolution), challenges, EVOLVE's permutation challenges | `src/sample.c` | §3 |
+| Discrete Gaussian samplers with bounded error (256-bit tables, convolution), exact rejection with overflow-checked integer arithmetic, challenges, EVOLVE's permutation challenges | `src/sample.c` | §3 |
 | BDLOP commitments (multi-message form), Shamir sharing, Reed–Solomon parity checks, Lagrange | `src/bdlop.c`, `src/shamir.c` | §3 |
 | Ballot with the EVOLVE-style ballot proof, one joint rejection step, OR-proofs, weight proof; seed-derived share randomness | `src/ballot.c` | §4 (Fig. 2), §6 |
 | Authority aggregation: recommitment tree, `Pi_open` and `Pi_zero` after Baum–Lyubashevsky 2017 with one joint rejection per stage over all blocks, `kappa` attempts committed by `G(W, salt)`, announce-then-reveal | `src/agg.c` | §6 |

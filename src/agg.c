@@ -72,12 +72,12 @@ void agg_params_init(agg_params *ap, const tv_params *p, long nleaves, c2_mode m
     memset(ap, 0, sizeof *ap);
     ap->fanin = p->fanin; ap->k = p->k_blk; ap->ell = p->ell; ap->kappa = p->kappa;
     ap->mode = mode;
-    ap->alpha = 437.0 / 20.0;                 /* rational, close to 12/ln(sqrt 3), so that ln M' is rational */
-    ap->logM_num = 105080; ap->logM_den = 190969;   /* 12/alpha' + 1/(2 alpha'^2) = 240/437 + 200/190969 */
+    ap->alpha = 281.0 / 10.0;                 /* rational, M' = exp(r/alpha' + 1/(2 alpha'^2)) ~ sqrt 3, r = 309/20 */
+    ap->logM_num = 86929; ap->logM_den = 157922;    /* 309/562 + 50/78961, M' = 1.7340 */
     ap->logM = (double)ap->logM_num / (double)ap->logM_den;
     ap->zinf_mult = 9.0;
     ap->logQ = logQ;
-    ap->tau = (128.0 + 40.0) * log(2.0);
+    ap->tau = 187.0 * log(2.0);               /* (l(E+1)+1) e^-tau <= 2^-171 per attempt for E <= 2^11 */
     agg_tree t;
     agg_tree_shape(&t, (int)nleaves, ap->fanin);
     agg_block *blk;
@@ -412,10 +412,10 @@ int agg_round2(agg_state *st, agg_contrib *out, agg_stats *stats, const tv_pub *
                 ch_mul_int(B, &c1, s, (size_t)p->mu);
                 for (size_t r = 0; r < vn; r++) {
                     int64_t z = Y1[(size_t)i * vn + r] + B[r];
-                    zb1 += (i128)z * B[r];
-                    bb1s += (i128)B[r] * B[r];
+                    zb1 = chk_madd(zb1, z, B[r], "aggregation rejection");
+                    bb1s = chk_madd(bb1s, B[r], B[r], "aggregation rejection");
                     Z1[(size_t)i * vn + r] = (int64_t)z;
-                    rowsq[r] += (i128)z * z;
+                    rowsq[r] = chk_madd(rowsq[r], z, z, "aggregation norms");
                 }
             }
             for (size_t r = 0; r < vn; r++) if (rowsq[r] > lim_row) small = 0;
@@ -432,14 +432,14 @@ int agg_round2(agg_state *st, agg_contrib *out, agg_stats *stats, const tv_pub *
                 }
                 for (size_t r = 0; r < vn; r++) {
                     int64_t z = Y2[(size_t)j * vn + r] + acc[r];
-                    zb2 += (i128)z * acc[r];
-                    bb2s += (i128)acc[r] * acc[r];
+                    zb2 = chk_madd(zb2, z, acc[r], "aggregation rejection");
+                    bb2s = chk_madd(bb2s, acc[r], acc[r], "aggregation rejection");
                     if ((i128)z * z > lim_ent2) small = 0;
                     Z2[(size_t)j * vn + r] = (int64_t)z;
                 }
                 for (int pp = 0; pp < p->mu; pp++) {
                     i128 cs = 0;
-                    for (int c = 0; c < TV_N; c++) { int64_t z = Z2[(size_t)j * vn + (size_t)pp * TV_N + c]; cs += (i128)z * z; }
+                    for (int c = 0; c < TV_N; c++) { int64_t z = Z2[(size_t)j * vn + (size_t)pp * TV_N + c]; cs = chk_madd(cs, z, z, "aggregation norms"); }
                     if (cs > lim_col) small = 0;
                 }
             }
@@ -511,7 +511,7 @@ int agg_verify(const tv_pub *pub, const agg_params *ap, const agg_contrib *c, co
         /* IsSmall */
         for (size_t r = 0; r < vn && ok; r++) {
             i128 s = 0;
-            for (int i = 0; i < b->count; i++) { int64_t z = Z1[(size_t)i * vn + r]; s += (i128)z * z; }
+            for (int i = 0; i < b->count; i++) { int64_t z = Z1[(size_t)i * vn + r]; s = sat_madd(s, z, z); }
             if (s > lim_row) ok = 0;
         }
         for (int j = 0; j < ell && ok; j++)
@@ -520,7 +520,7 @@ int agg_verify(const tv_pub *pub, const agg_params *ap, const agg_contrib *c, co
                 for (int q2 = 0; q2 < TV_N; q2++) {
                     int64_t z = Z2[(size_t)j * vn + (size_t)pp * TV_N + q2];
                     if ((i128)z * z > lim_ent2) ok = 0;
-                    cs += (i128)z * z;
+                    cs = sat_madd(cs, z, z);
                 }
                 if (cs > lim_col) ok = 0;
             }
@@ -573,7 +573,7 @@ int agg_verify(const tv_pub *pub, const agg_params *ap, const agg_contrib *c, co
     /* root opening */
     if (ok) {
         i128 n2 = 0;
-        for (size_t i = 0; i < vn; i++) n2 += (i128)c->rho_root[i] * c->rho_root[i];
+        for (size_t i = 0; i < vn; i++) n2 = sat_madd(n2, c->rho_root[i], c->rho_root[i]);
         if (n2 > (i128)tv_beta2(p)) ok = 0;
         poly *cr = malloc(sizeof(poly) * rows);
         tv_commit(cr, pub, c->V, c->rho_root);

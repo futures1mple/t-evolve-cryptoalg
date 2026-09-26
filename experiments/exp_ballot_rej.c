@@ -3,7 +3,7 @@
  * For every configuration, generates independent ballots (fresh voter randomness, fresh
  * challenges in every attempt, sigma_J fixed in advance by params.c, exact discrete Gaussian
  * sampler), runs the complete prover and verifier, and records:
- *   - the number of attempts (expected: M = exp(12/11 + 1/242) ~ 2.99, independent of L);
+ *   - the number of attempts (expected: M = exp(43669/39762) ~ 3.00, independent of L);
  *   - the ratio ||shift|| / T (the rejection lemma needs <= 1);
  *   - the response norm relative to B_J, and that every ballot verifies after encoding;
  *   - a chi-square goodness-of-fit test of the accepted responses against D_{sigma_J};

@@ -18,11 +18,11 @@ typedef enum { C2_BINARY = 0, C2_SIGNED = 1 } c2_mode;
 typedef struct {
     int fanin, k, ell, kappa;
     c2_mode mode;
-    double alpha, logM;          /* sigma = alpha * T, M = exp(12/alpha + 1/(2 alpha^2)) */
+    double alpha, logM;          /* sigma = alpha * T, M = exp(r/alpha + 1/(2 alpha^2)), r = 309/20 */
     double T1, T2;               /* bounds on the norms of the two shifts (all blocks) */
     double sigma1, sigma2;
     uint64_t sig1sq, sig2sq;     /* sigma1^2, sigma2^2 as integers (see sample.h) */
-    int64_t logM_num, logM_den;  /* ln M' exactly: alpha' = 437/20 gives 105080/190969 */
+    int64_t logM_num, logM_den;  /* ln M' exactly: alpha' = 281/10 gives 86929/157922 */
     double zinf_mult;            /* entries of Z2 must be <= zinf_mult * sigma2 (9) */
     double logQ;                 /* grinding: log2 of the adversary's hash queries */
     double tau;                  /* failure exponent (nats) of every tail bound */

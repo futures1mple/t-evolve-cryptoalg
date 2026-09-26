@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 """Generates include/cdt_tables.h: cumulative distribution tables of |X| for X ~ D_{Z,sigma},
-sigma in {1, 256}, with 192-bit entries.
+sigma in {1, 256}, with 256-bit entries.
 
-rho(x) = exp(-x^2 / (2 sigma^2)).  Entry x is floor(2^192 * Pr[|X| <= x]) for 0 <= x < XMAX, where
-XMAX is the first x with Pr[|X| >= x] < 2^-200.  A sampler that draws r uniform in [0, 2^192) and
+rho(x) = exp(-x^2 / (2 sigma^2)).  Entry x is floor(2^256 * Pr[|X| <= x]) for 0 <= x < XMAX, where
+XMAX is the first x with Pr[|X| >= x] < 2^-264.  A sampler that draws r uniform in [0, 2^256) and
 returns #{x : r >= CDT[x]} with a uniform sign (for a nonzero value) outputs a distribution within
-statistical distance (XMAX + 1) * 2^-192 + 2^-200 of D_{Z,sigma}.
+statistical distance (XMAX + 1) * 2^-256 + 2^-264 of D_{Z,sigma}.
 
 usage: python3 tools/gen_cdt.py > include/cdt_tables.h      (needs mpmath)
 """
 import mpmath as mp
 
-mp.mp.prec = 400
-BITS = 192
-TAIL = mp.mpf(2) ** -200
+mp.mp.prec = 512
+BITS = 256
+TAIL = mp.mpf(2) ** -264
 
 
 def table(sigma):
     s2 = 2 * mp.mpf(sigma) ** 2
-    # normaliser: sum over Z, far enough that the rest is below 2^-400
-    lim = int(40 * sigma) + 40
+    # normaliser: sum over Z, far enough that the rest is negligible at this precision
+    lim = int(40 * sigma) + 40   # tail beyond 40 sigma is below 2^-1100
     Z = 1 + 2 * mp.fsum(mp.e ** (-mp.mpf(x) ** 2 / s2) for x in range(1, lim))
     p = [1 / Z] + [2 * mp.e ** (-mp.mpf(x) ** 2 / s2) / Z for x in range(1, lim)]
     cum, out, acc = [], None, mp.mpf(0)
@@ -35,15 +35,15 @@ def table(sigma):
     for c in cum:
         v = int(mp.floor(c * mp.mpf(2) ** BITS))
         assert 0 < v < 2 ** BITS
-        words.append(((v >> 128) & (2**64 - 1), (v >> 64) & (2**64 - 1), v & (2**64 - 1)))
+        words.append(tuple((v >> (64 * (3 - i))) & (2**64 - 1) for i in range(4)))
     return words
 
 
 def emit(name, words):
     print(f"#define {name}_LEN {len(words)}")
-    print(f"static const uint64_t {name}[{len(words)}][3] = {{")
+    print(f"static const uint64_t {name}[{len(words)}][4] = {{")
     for w in words:
-        print("    {0x%016xULL, 0x%016xULL, 0x%016xULL}," % w)
+        print("    {0x%016xULL, 0x%016xULL, 0x%016xULL, 0x%016xULL}," % w)
     print("};")
 
 

@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "sample.h"
 
@@ -34,8 +35,6 @@ uint64_t prg_u64(prg *p) {
     return x;
 }
 
-double prg_unif(prg *p) { return ((double)(prg_u64(p) >> 11) + 1.0) * (1.0 / 9007199254740992.0); }
-
 unsigned prg_below(prg *p, unsigned bound) {
     unsigned lim = 65536u - 65536u % bound;
     for (;;) {
@@ -58,13 +57,13 @@ void sample_uniform_poly(poly *r, prg *p) {
 
 #include "cdt_tables.h"
 
-/* |X| by a cumulative table T[0..len) of 192-bit entries: |X| = #{j : r >= T[j]} for r uniform in
-   [0, 2^192). r is drawn lazily: first its top 16 bits u; the entries with top 16 bits < u are all
+/* |X| by a cumulative table T[0..len) of 256-bit entries: |X| = #{j : r >= T[j]} for r uniform in
+   [0, 2^256). r is drawn lazily: first its top 16 bits u; the entries with top 16 bits < u are all
    <= r and those with top 16 bits > u are all > r, so only the entries whose top 16 bits equal u
    (usually none) need more bits of r. The stream consumption depends only on the stream itself. */
 typedef struct { uint16_t *lt; } cdt_index;      /* lt[u] = #{j : top16(T[j]) < u}, u = 0..65536 */
 
-static void cdt_index_build(cdt_index *ix, const uint64_t (*tab)[3], int len) {
+static void cdt_index_build(cdt_index *ix, const uint64_t (*tab)[4], int len) {
     ix->lt = malloc(sizeof(uint16_t) * 65537);
     int j = 0;
     for (uint32_t u = 0; u <= 65536; u++) {
@@ -81,19 +80,19 @@ static uint64_t prg_bits48(prg *p) {
     return x;
 }
 
-static int64_t cdt_abs(prg *p, const uint64_t (*tab)[3], const cdt_index *ix) {
+static int64_t cdt_abs(prg *p, const uint64_t (*tab)[4], const cdt_index *ix) {
     uint8_t b[2];
     prg_bytes(p, b, 2);
     uint32_t u = (uint32_t)b[0] | ((uint32_t)b[1] << 8);
     int lo = ix->lt[u], hi = ix->lt[u + 1];
     if (lo == hi) return lo;
     /* rare: complete r and compare with the entries in [lo, hi) */
-    uint64_t w[3];
+    uint64_t w[4];
     w[0] = ((uint64_t)u << 48) | prg_bits48(p);
     int have = 1, x = lo;
     for (int j = lo; j < hi; j++) {
         int ge = 1;
-        for (int k = 0; k < 3; k++) {
+        for (int k = 0; k < 4; k++) {
             if (have <= k) { w[k] = prg_u64(p); have = k + 1; }
             if (w[k] != tab[j][k]) { ge = w[k] > tab[j][k]; break; }
         }
@@ -111,7 +110,7 @@ static void cdt_ready(void) {
 
 typedef struct { uint64_t bits; int left; } signbits;
 
-static int64_t cdt_sample(prg *p, signbits *sb, const uint64_t (*tab)[3], const cdt_index *ix) {
+static int64_t cdt_sample(prg *p, signbits *sb, const uint64_t (*tab)[4], const cdt_index *ix) {
     int64_t x = cdt_abs(p, tab, ix);
     if (x == 0) return 0;
     if (sb->left == 0) { sb->bits = prg_u64(p); sb->left = 64; }
@@ -120,10 +119,10 @@ static int64_t cdt_sample(prg *p, signbits *sb, const uint64_t (*tab)[3], const 
     return neg ? -x : x;
 }
 
-/* eta = sqrt(ln(2 + 2^161)/pi) >= eta_eps(Z) for eps = 2^-160 (Gaussian parameter s = sqrt(2 pi) sigma).
+/* eta = sqrt(ln(2 + 2^221)/pi) >= eta_eps(Z) for eps = 2^-220 (Gaussian parameter s = sqrt(2 pi) sigma).
    The convolution theorem needs s_in >= sqrt(2) max(a,b) eta, i.e. max(a,b)^2 <= (pi/eta^2) sigma_in^2.
-   C2 = pi/eta^2 = pi^2 / ln(2 + 2^161), rounded down by a relative 1e-12 for safety. */
-static double conv_c2(void) { return (9.8696044010893586188 / (161.0 * 0.69314718055994530942)) * (1.0 - 1e-12); }
+   C2 = pi/eta^2 = pi^2 / ln(2 + 2^221) < pi^2 / (221 ln 2), rounded down by a relative 1e-12 for safety. */
+static double conv_c2(void) { return (9.8696044010893586188 / (221.0 * 0.69314718055994530942)) * (1.0 - 1e-12); }
 
 static int64_t gcd64(int64_t a, int64_t b) { while (b) { int64_t t = a % b; a = b; b = t; } return a; }
 
@@ -233,14 +232,23 @@ static u128 uniform_below(prg *p, u128 m) {
 /* 1 with probability num/den, 0 <= num <= den */
 static int bern_frac(prg *p, u128 num, u128 den) { return uniform_below(p, den) < num; }
 
-/* 1 with probability exp(-num/den), 0 <= num <= den [CKS20, Alg. 1] */
+void tv_range_abort(const char *where) {
+    fprintf(stderr, "t-evolve: integer range exceeded in %s (parameters outside the supported range)\n", where);
+    abort();
+}
+
+/* 1 with probability exp(-num/den), 0 <= num <= den < 2^TV_BERN_DEN_BITS [CKS20, Alg. 1].
+   The counter K of the algorithm is unbounded; it is capped at TV_BERN_KMAX, so that den * K < 2^126
+   never overflows. The loop reaches the cap with probability at most prod_{j<KMAX} (num/den)/j
+   <= 1/(KMAX-1)! < 2^-(2^24), and only then can the output differ from Bernoulli(exp(-num/den)). */
 static int bern_exp01(prg *p, u128 num, u128 den) {
     u128 K = 1;
-    while (bern_frac(p, num, den * K)) K++;
+    while (K < TV_BERN_KMAX && bern_frac(p, num, den * K)) K++;
     return (int)(K & 1);
 }
 
 int bern_exp(prg *p, i128 num, i128 den) {
+    if (den <= 0 || den >= ((i128)1 << TV_BERN_DEN_BITS)) tv_range_abort("bern_exp (denominator)");
     if (num <= 0) return 1;
     u128 n = (u128)num, d = (u128)den;
     while (n > d) {                       /* exp(-g) = exp(-1) * exp(-(g-1)) */
@@ -252,8 +260,13 @@ int bern_exp(prg *p, i128 num, i128 den) {
 
 int reject_accept(prg *p, i128 zs, i128 ss, uint64_t sigma2, int64_t cn, int64_t cd) {
     /* R = (2 zs - ss)/(2 sigma2) + cn/cd = ((2 zs - ss) cd + 2 sigma2 cn) / (2 sigma2 cd); accept w.p. exp(-R) */
-    i128 den = (i128)2 * (i128)sigma2 * (i128)cd;
-    i128 num = ((i128)2 * zs - ss) * (i128)cd + (i128)2 * (i128)sigma2 * (i128)cn;
+    i128 den, num, t, u;
+    if (cd <= 0 || cn < 0 || zs < -TV_DOT_MAX || zs > TV_DOT_MAX || ss < 0 || ss > TV_DOT_MAX ||
+        __builtin_mul_overflow((i128)2 * (i128)sigma2, (i128)cd, &den) ||
+        __builtin_mul_overflow((i128)2 * zs - ss, (i128)cd, &t) ||
+        __builtin_mul_overflow((i128)2 * (i128)sigma2, (i128)cn, &u) ||
+        __builtin_add_overflow(t, u, &num))
+        tv_range_abort("reject_accept");
     return bern_exp(p, num, den);
 }
 

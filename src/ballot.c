@@ -152,7 +152,7 @@ static void parity_first(poly *v, const tv_pub *pub, const poly *xh) {
 
 static i128 sqnorm(const int64_t *x, size_t n) {      /* exact */
     i128 s = 0;
-    for (size_t i = 0; i < n; i++) s += (i128)x[i] * x[i];
+    for (size_t i = 0; i < n; i++) s = sat_madd(s, x[i], x[i]);   /* saturates: never wraps */
     return s;
 }
 
@@ -245,7 +245,7 @@ int tv_vote(tv_ballot *b, tv_voter_secret *sec, tv_prove_stats *stats, const tv_
         }
         /* single rejection step on all witness-dependent responses */
         i128 zv = 0, vv = 0;                      /* exact integers */
-        for (size_t i = 0; i < nwit; i++) { zv += (i128)zall[i] * shift[i]; vv += (i128)shift[i] * shift[i]; }
+        for (size_t i = 0; i < nwit; i++) { zv = chk_madd(zv, zall[i], shift[i], "ballot rejection"); vv = chk_madd(vv, shift[i], shift[i], "ballot rejection"); }
         double ratio = sqrt((double)vv) / p->T;   /* statistics only */
         if (ratio > max_ratio) max_ratio = ratio;
         if (!reject_accept(&g, zv, vv, p->sigma_J2, p->logM_num, p->logM_den)) continue;
@@ -255,7 +255,7 @@ int tv_vote(tv_ballot *b, tv_voter_secret *sec, tv_prove_stats *stats, const tv_
             int m = v[a];
             memcpy(b->or_r + ((size_t)a * 2 + m) * vn, zall + nz + (size_t)a * vn, sizeof(int64_t) * vn);
         }
-        i128 nrm2 = sqnorm(b->z, nz) + sqnorm(b->or_r, (size_t)L * 2 * vn);
+        i128 nrm2 = sat_add(sqnorm(b->z, nz), sqnorm(b->or_r, (size_t)L * 2 * vn));
         if (nrm2 > (i128)p->B_J2) continue;
         if (stats) { stats->attempts = attempts; stats->max_shift_ratio = max_ratio; stats->resp_norm = sqrt((double)nrm2); }
         break;
@@ -272,7 +272,7 @@ int tv_verify_ballot(const tv_pub *pub, const tv_ballot *b) {
     int n = p->n, L = p->L, d = p->d, mu = p->mu, rows = p->rows;
     size_t vn = VN(p), nz = (size_t)(n + 1) * vn;
     /* norm bound */
-    i128 nrm2 = sqnorm(b->z, nz) + sqnorm(b->or_r, (size_t)L * 2 * vn);
+    i128 nrm2 = sat_add(sqnorm(b->z, nz), sqnorm(b->or_r, (size_t)L * 2 * vn));
     if (nrm2 > (i128)p->B_J2) return 0;
     challenge c;
     perm_ch *pi = malloc(sizeof(perm_ch) * L);

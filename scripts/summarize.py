@@ -73,7 +73,7 @@ def main(folder):
             if last and nv > last["nv"]:
                 E = blocks(nv)
                 out.append(f"| {nv} | {E} | {4 * E * last['r1b']:.0f} | {3 * E * last['r2b']:.0f} | {E * last['vb']:.0f} | — | extrapolated |")
-        s, r_all, r_worst = rounds_model(math.exp(-2 * 105080 / 190969), 4, 4, 3)
+        s, r_all, r_worst = rounds_model(math.exp(-2 * 86929 / 157922), 4, 4, 3)
         out.append(f"\nRounds (kappa = 4, attempt success 1/M^2 = 0.333): an authority succeeds in a round with probability {s:.2f}; "
                    f"expected rounds {r_all:.2f} with 4 honest authorities, at most {r_worst:.2f} with 3. If fewer than t authorities "
                    f"announce an attempt, no responses are published. Misbehaviour cannot make a round fail that would otherwise succeed; "

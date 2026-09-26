@@ -142,10 +142,10 @@ int ev_vote(ev_ballot *b, poly *shares, int64_t *rnd, int *attempts, const tv_pu
         else { perm_apply_inv(&fm, &pi, &fs); b->f0 = fm; }
         ch_mul_int(sh, &fm, r, (size_t)p->mu);
         i128 zv = 0, vv = 0;
-        for (size_t i = 0; i < vn; i++) { rm[i] = rho[i] + sh[i]; zv += (i128)rm[i] * sh[i]; vv += (i128)sh[i] * sh[i]; }
+        for (size_t i = 0; i < vn; i++) { rm[i] = rho[i] + sh[i]; zv = chk_madd(zv, rm[i], sh[i], "EVOLVE rejection"); vv = chk_madd(vv, sh[i], sh[i], "EVOLVE rejection"); }
         if (!reject_accept(&g, zv, vv, ep->sigma_OR2, ep->logM_num, ep->logM_den)) continue;
         i128 n2 = 0;
-        for (size_t i = 0; i < vn; i++) n2 += (i128)b->r0[i] * b->r0[i] + (i128)b->r1[i] * b->r1[i];
+        for (size_t i = 0; i < vn; i++) n2 = sat_madd(sat_madd(n2, b->r0[i], b->r0[i]), b->r1[i], b->r1[i]);
         if (n2 > (i128)ep->B_OR2) continue;
         break;
     }
@@ -159,7 +159,7 @@ int ev_verify(const tv_pub *pub, const ev_params *ep, const ev_ballot *b) {
     const tv_params *p = &pub->prm;
     size_t vn = VN(p);
     i128 n2 = 0;
-    for (size_t i = 0; i < vn; i++) n2 += (i128)b->r0[i] * b->r0[i] + (i128)b->r1[i] * b->r1[i];
+    for (size_t i = 0; i < vn; i++) n2 = sat_madd(sat_madd(n2, b->r0[i], b->r0[i]), b->r1[i], b->r1[i]);
     if (n2 > (i128)ep->B_OR2) return 0;
     int rows = p->rows;
     poly *c = malloc(sizeof(poly) * rows), *t0 = malloc(sizeof(poly) * rows), *t1 = malloc(sizeof(poly) * rows);

@@ -182,8 +182,8 @@ static void test_gauss(double target, int n) {
 
 /* the conditions of the convolution theorem hold for every plan used by the parameter sets */
 static void test_gauss_plans(void) {
-    const double c2 = 9.8696044010893586188 / log(2.0 + pow(2.0, 161));
-    double targets[] = {300, 1000, 25113.9, 27000, 54000, 1.2e5, 2.8e6, 8.9e6, 3.0e7, 9.1e7, 2.0e8};
+    const double c2 = 9.8696044010893586188 / log(2.0 + pow(2.0, 221));
+    double targets[] = {300, 1000, 25113.9, 27000, 54000, 1.2e5, 2.8e6, 8.9e6, 3.0e7, 9.1e7, 1.8e8};
     for (unsigned i = 0; i < sizeof targets / sizeof *targets; i++) {
         gauss_sampler g;
         CHECK(gauss_init(&g, targets[i]) == 0, "plan %g", targets[i]);
@@ -225,6 +225,15 @@ static void test_bern_exp(void) {
     c = 0;
     for (long j = 0; j < 1000; j++) c += reject_accept(&p, -1000, 0, 50, 265, 242);   /* R < 0: always accept */
     CHECK(c == 1000, "reject_accept with R < 0");
+    /* saturating sums of squares (verifier side) never wrap around */
+    i128 sq = 0;
+    for (int j = 0; j < 4; j++) sq = sat_madd(sq, INT64_MAX, INT64_MAX);
+    CHECK(sq == I128_MAX, "sat_madd saturates");
+    CHECK(chk_madd(5, -3, 4, "test") == -7, "chk_madd");
+    /* a large exponent: exp(-40.5) ~ 2.6e-18, so no acceptance in 10^5 trials, and many exp(-1) factors */
+    c = 0;
+    for (long j = 0; j < 100000; j++) c += bern_exp(&p, 81, 2);
+    CHECK(c == 0, "bern_exp with gamma = 40.5");
 }
 
 /* known answer for seed-derived commitment randomness: must be identical on every platform,

@@ -7,8 +7,10 @@ sizes. The C function that computes each step is named, and `build/param_report`
 them for one configuration.
 
 Throughout, `N = 256`, `mu = 2d + L` is the width of a commitment, `sigma = 1` is the parameter
-of the commitment randomness, and `tau = (128 + 40) ln 2` is the failure exponent used in every
-tail bound: 2^-128 per event, with a union bound over at most 2^40 events.
+of the commitment randomness. All statistical errors are budgeted so that their sum over at most
+2^40 attempts (of ballot proofs and aggregation proofs together) stays below 2^-128 (Section 7): the
+tail bounds use `tau = 171 ln 2` for the ballot proof and `tau = 187 ln 2` for the aggregation, and
+each rejection step has error at most `e^{-r^2/2} < 2^-172` with `r = 309/20`.
 
 ## 1. Two facts used everywhere
 
@@ -40,17 +42,20 @@ blocks). Hence `||s|| <= T` except with probability `e^-tau`, with
 
     T^2 = sigma^2 (tr + 2 sqrt(3600 (1+L) tr tau) + 2 * 3600 (1+L) tau).
 
-**Rejection.** `sigma_J` is the smallest value `>= 11 T` that the sampler produces (§5), and
-`M = exp(12/11 + 1/242) = 2.989`, i.e. `ln M = 265/242` exactly. The acceptance test is exact: with
-the integers `zs = <z, s>` and `ss = ||s||^2` (128-bit arithmetic) and the integer `sigma_J^2`, the
-response is accepted with probability `min(1, exp((ss - 2 zs) / (2 sigma_J^2) - 265/242))`, drawn by
-the algorithm of Canonne–Kamath–Steinke (Bernoulli(exp(-g)) for rational `g`, integer arithmetic
-only; `reject_accept` in `src/sample.c`). The only source of error is the PRG. By [Lyubashevsky 2012,
-Thm. 4.6/Lemma 4.7], conditioned on `||s|| <= T`, one attempt accepts with probability within
-`2^-100` of `1/M`, and the accepted responses are within statistical distance `2^-100/M` of
-`D_{sigma_J}` over the whole concatenation, independently of the witness. Without the condition
-we add `e^-tau`. **Per attempt the simulation error is at most `2^-100 / M + 2^-168`**, and it
-enters `epsilon_zk` of the privacy theorem once per attempt of every honest ballot.
+**Rejection.** `sigma_J` is the smallest value `>= alpha T` that the sampler produces (§5), with
+`alpha = 141/10`, and `M = exp(r/alpha + 1/(2 alpha^2))` with `r = 309/20`, i.e.
+`ln M = 43669/39762` exactly (`M = 2.999`). The acceptance test is exact: with the integers
+`zs = <z, s>` and `ss = ||s||^2` (128-bit arithmetic with overflow checks) and the integer
+`sigma_J^2`, the response is accepted with probability `min(1, exp((ss - 2 zs) / (2 sigma_J^2) - ln M))`,
+drawn by the algorithm of Canonne–Kamath–Steinke (Alg. 1 and Prop. 33 of arXiv:2004.00010v6:
+Bernoulli(exp(-g)) for rational `g`, integer arithmetic only; `reject_accept` in `src/sample.c`).
+The only source of error is the PRG (and the cap of Section 7, below 2^-(2^23)). As in
+[Lyubashevsky 2012, Lemma 4.5 and Thm. 4.6], with `<z, s>` one-sided subgaussian, the ratio of the
+densities exceeds `M` with probability at most `e^{-r^2/2} = 2^-172.2`; conditioned on `||s|| <= T`,
+the accepted responses are within statistical distance `e^{-r^2/2}/M` of `D_{sigma_J}` over the whole
+concatenation, independently of the witness. Without the condition we add `e^-tau`. **Per attempt the
+simulation error is at most `e^{-r^2/2}/M + 2^-171` plus the freshness term of the paper**, and it enters
+`epsilon_zk` of the privacy theorem once per attempt of every honest ballot.
 
 Compared with the heuristic choice `sigma_J = 11 sqrt(60 N mu (n+1+L))` used before, `T` is
 larger by a factor 1.9–2.1 (about one bit), so the rigorous choice costs about 3% of the ballot
@@ -115,11 +120,12 @@ and the values for `N_V` bound those of every smaller tree. Compared with the ex
 values this costs at most 0.003 bit in `sigma1`, `sigma2` and `beta_SIS`.
 
 **Rejection.** `sigma_i` is the smallest achievable value `>= alpha' T_i` with the rational
-`alpha' = 437/20 = 21.85` (close to `12 / ln sqrt(3) = 21.846`), and `M' = exp(12/alpha' + 1/(2 alpha'^2))`,
-`ln M' = 105080/190969` exactly (`M' = 1.7337`). Each of the two steps is applied once per attempt to
-the concatenation over all `E` blocks, with the exact test described for the ballot proof. An attempt
-succeeds with probability about `1/M'^2 = 0.333`, independently of `E`; the simulation error per
-attempt is at most `2 * 2^-100 / M' + (l(E+1)+1) e^-tau + eps_fresh` (Lemma 13 of the paper). The norm
+`alpha' = 281/10 = 28.1`, and `M' = exp(r/alpha' + 1/(2 alpha'^2))` with `r = 309/20`, so that
+`ln M' = 86929/157922` exactly (`M' = 1.7340`, about `sqrt 3`). Each of the two steps is applied once
+per attempt to the concatenation over all `E` blocks, with the exact test described for the ballot
+proof. An attempt succeeds with probability about `1/M'^2 = 0.333`, independently of `E`; the
+simulation error per attempt is at most `2 e^{-r^2/2}/M' + (l(E+1)+1) e^-tau + eps_fresh` with
+`tau = 187 ln 2` (Lemma 13 of the paper; `(l(E+1)+1) e^-tau <= 2^-171` for `E <= 2^11`). The norm
 checks of every block (`IsSmall`) are exact integer comparisons: rows of `Z1` with
 `||.||^2 <= 2 k sigma1^2`; entries of `Z2` with `z^2 <= 81 sigma2^2`; each ring component of each
 column of `Z2` with `||.||^2 <= 2 N sigma2^2`.
@@ -174,38 +180,78 @@ Integer arithmetic only, so every platform produces the same output from the sam
 statistical distance of each sampler from the ideal distribution is bounded.
 
 * `sigma = 1` (all commitment randomness, including the seed-derived randomness of the shares): a
-  table of `floor(2^192 Pr[|X| <= x])` for `x < 17`, generated with 400-bit arithmetic by
-  `tools/gen_cdt.py`; `r` is uniform in `[0, 2^192)`, drawn 64 bits at a time only as far as the
+  table of `floor(2^256 Pr[|X| <= x])` for `x < 20`, generated with 512-bit arithmetic by
+  `tools/gen_cdt.py`; `r` is uniform in `[0, 2^256)`, drawn 64 bits at a time only as far as the
   comparisons need, and `|X| = #{x : r >= CDT[x]}`, with a uniform sign. Statistical distance at most
-  `18 * 2^-192 + 2^-200 < 2^-187` per sample.
-* Base sampler `D_{Z,256}`: the same construction with 4217 entries, distance `< 2^-179` per sample.
+  `21 * 2^-256 + 2^-264 < 2^-251` per sample.
+* Base sampler `D_{Z,256}`: the same construction with 4856 entries, distance `< 2^-243` per sample.
 * Large `sigma` (masks): convolution as in Micciancio–Walter (CRYPTO 2017). Level 1 returns
   `a1 x + b1 x'` for two base samples, level 2 returns `a2 y + b2 y'` for two level-1 samples,
   with `gcd(a_l, b_l) = 1` and `max(a_l, b_l)^2 <= (pi / eta^2) sigma_in^2`, where
-  `eta = sqrt(ln(2 + 2^161) / pi) >= eta_eps(Z)` for `eps = 2^-160` [MR04, Lemma 3.3]. By the
+  `eta = sqrt(ln(2 + 2^221) / pi) >= eta_eps(Z)` for `eps = 2^-220` [MR04, Lemma 3.3]. By the
   convolution theorem [MP13, Thm. 3.3; MW17, Thm. 2.1 and Lemma 5.1] the output built from exact base
-  samples has relative error at most `2^levels * 2 eps <= 2^-157` with respect to `D_{Z,sigma_out}`,
+  samples has relative error at most `2^levels * 2 eps <= 2^-217` with respect to `D_{Z,sigma_out}`,
   `sigma_out = 256 sqrt((a1^2 + b1^2)(a2^2 + b2^2))`; replacing the (at most four) base samples by
-  the table adds at most `4 * 2^-179`. Hence at most `2^-157` per sample.
+  the table adds at most `4 * 2^-243`. Hence at most `2^-216` per sample. The largest achievable
+  `sigma_out` is about `1.9 * 10^8 = 2^27.5`; the largest mask here is `sigma_1 = 2^26.8` (`N_V = 10^6`).
 * `sigma_out` is the smallest achievable value `>= alpha T` (the search is in `plan()`); it exceeds
   the target by at most `0.02%` for all masks here. Every bound (`sigma_J`, `B_J`, `sigma_1`,
   `sigma_2`, `B_A`, `beta_BL`, rejection) is computed with `sigma_out`, via `gauss_round_sigma()`.
   A larger `sigma` keeps the rejection bound valid with the same `M`.
 * Per attempt the ballot proof draws `(n + 1 + 2L) N (2d + L)` mask coefficients (26 880 for
   `n = 4, L = 1`; 153 600 for `n = 4, L = 10`), so the sampling error is at most
-  `(n + 1 + 2L) N (2d + L) 2^-157`, i.e. `2^-142.3` and `2^-139.8`. The aggregation draws
+  `(n + 1 + 2L) N (2d + L) 2^-216`, i.e. `2^-201.3` and `2^-198.8`. The aggregation draws
   `E N (2d + L) (k + ell)` coefficients per attempt, at most `2^33` for `N_V = 10^6`, hence at most
-  `2^-124`. Both are far below the rejection errors and are added to the simulation error.
+  `2^-183`. The randomness of `sigma = 1` is replaced by ideal samples in one hybrid for all at most
+  `Q = 2^64` outputs of `X` (Lemma 13 takes a union bound over them), at most
+  `Q N (2d + L) 2^-251 <= 2^-174.4` once per experiment.
 
 ## 6. Status of the statements
 
 | Statement | Status |
 |---|---|
 | Formulas above; the numbers printed by `param_report` and `chain.py` | established (given the cited lemmas) |
-| Samplers | statistical distance bounded (see §5): `< 2^-187` (`sigma = 1`), `< 2^-157` (masks) per sample |
-| Ballot proof: rejection error per attempt `2^-100/M + 2^-168` | established |
-| Acceptance tests and norm checks | exact: integer arithmetic and exact Bernoulli(exp(-g)) sampling; only the PRG remains |
+| Samplers | statistical distance bounded (see §5): `< 2^-251` (`sigma = 1`), `< 2^-216` (masks) per sample |
+| Ballot proof: rejection error per attempt `e^{-r^2/2}/M + 2^-171` | established |
+| Acceptance tests and norm checks | exact: integer arithmetic with overflow checks and exact Bernoulli(exp(-g)) sampling (cap of §7 below 2^-(2^23)); only the PRG remains |
+| Total statistical error of the simulations over 2^40 attempts | below 2^-128 (§7) |
 | Aggregation with signed `C2`: bounds on both shifts (Lemma 13), extraction with slack 2 (Lemma 11) | proved in the paper; new in this version, independent verification pending |
 | Grinding: a union bound over `2^64` seeds per leaf | established in the ROM; `Q = 2^64` is an assumption on the adversary |
 | Expected attempts (ballot ~3, aggregation ~3) and the resulting costs | measured; plausible for other machines |
 | 128-bit security of the chosen `(d, q)` | estimate of the lattice estimator; the reduction of the paper is not tight |
+
+## 7. Error budget and integer ranges
+
+**Budget.** Per attempt, for the largest parameter sets (`N_V = 10^6`, `E = 2142`; ballot with
+`n = 4`, `L = 10`):
+
+| Source | Ballot attempt | Aggregation attempt |
+|---|---|---|
+| Tail bounds (Lemma 8, resp. Lemma 13: `(l(E+1)+1) e^-tau`) | `2^-171` | `2^-171.0` |
+| Rejection (`e^{-r^2/2}/M` per step; one, resp. two steps) | `2^-173.8` | `2^-172.0` |
+| Mask samplers | `2^-198.8` | `2^-183.0` |
+| Freshness of the hashed first messages, programming | `< 2^-1000` | `2^-192` (salt, `q_G <= 2^64`, 256-bit salts) |
+| Cap of the Bernoulli counter | `< 2^-(2^23)` | `< 2^-(2^23)` |
+| **Sum** | **`< 2^-170.7`** | **`< 2^-170.3`** |
+
+Over at most `2^40` attempts of both kinds together this is below `2^-130.3`; the hybrid for the
+`sigma = 1` randomness adds `2^-174.4` once. The total statistical error of the simulations is
+therefore below `2^-128`. The computational terms (hiding, IND-CCA, EUF-CMA, M-SIS) are separate.
+
+**Integer ranges.** All acceptance decisions use integers only; every intermediate value is either
+bounded below by the table or checked at run time.
+
+| Quantity | Range | How it is ensured |
+|---|---|---|
+| Coefficients of masks, responses, witnesses | `|x| < 2^63` (int64) | Gaussian samples below `2^27.5 * 40`; decoded inputs are int64 |
+| Products `x * y` of two coefficients | `< 2^126` | always, in `__int128` |
+| Sums of products (`<z, s>`, `||s||^2`, norms) | `< 2^127` | prover side: `chk_madd`, aborts on overflow; verifier side: `sat_madd` saturates, so an oversized input fails the norm check |
+| `sigma^2` | `< 2^56` | `sigma_out <= 2^27.5` (§5) |
+| `cn/cd = ln M` | `cd < 2^18`, `cn < 2^17` | the two constants above |
+| `2 sigma^2 cd` (denominator) | `< 2^106` | checked in `bern_exp` |
+| `(2 zs - ss) cd + 2 sigma^2 cn` (numerator) | `< 2^127` | `|zs|, ss <= 2^100` and checked multiplications in `reject_accept` |
+| Counter `K` of CKS Alg. 1 | `K <= 2^20`, so `den * K < 2^126` | cap; reached with probability `< 1/(2^20 - 1)! < 2^-(2^23)` per call, the only case in which the output may differ |
+| Loop count of `bern_exp` (factors `exp(-1)`) | `<= num/den <= 2^101` | each factor continues only with probability `e^-1`, so fewer than 2 iterations are expected; the count affects running time only |
+
+Values outside these ranges stop the program with an error message (`tv_range_abort`); they never
+produce a silently wrong result. With the parameter sets of `tools/chain.py` the checks never fire.
