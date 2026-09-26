@@ -200,9 +200,9 @@ statistical distance of each sampler from the ideal distribution is bounded.
   A larger `sigma` keeps the rejection bound valid with the same `M`.
 * Per attempt the ballot proof draws `(n + 1 + 2L) N (2d + L)` mask coefficients (26 880 for
   `n = 4, L = 1`; 153 600 for `n = 4, L = 10`), so the sampling error is at most
-  `(n + 1 + 2L) N (2d + L) 2^-216`, i.e. `2^-201.3` and `2^-198.8`. The aggregation draws
+  `(n + 1 + 2L) N (2d + L) 2^-216`, i.e. below `2^-201.2` and `2^-198.7` (about `2^-201.29` and `2^-198.77`). The aggregation draws
   `E N (2d + L) (k + ell)` coefficients per attempt, `2^33.0` for `N_V = 10^6` and `L = 1`
-  (`2^33.6` for `L = 10`), hence at most `2^-183.0` (resp. `2^-182.4`). The randomness of `sigma = 1` is replaced by ideal samples in one hybrid for all at most
+  (`2^33.6` for `L = 10`), hence below `2^-183.0` (`2^-183.04`), resp. below `2^-182.3` (about `2^-182.36`). The randomness of `sigma = 1` is replaced by ideal samples in one hybrid for all at most
   `Q = 2^64` outputs of `X` (Lemma 13 takes a union bound over them), at most
   `Q N (2d + L) 2^-251 <= 2^-174.4` once per experiment.
 
@@ -231,9 +231,9 @@ are an assumption.
 
 | Source | Ballot attempt | Aggregation attempt |
 |---|---|---|
-| Tail bounds (Lemma 8, resp. Lemma 13: `(l(E+1)+1) e^-tau`) | `2^-171` | `2^-171.0` |
-| Rejection (`e^{-r^2/2}/M` per step; one, resp. two steps) | `2^-173.8` | `2^-172.0` |
-| Mask samplers | `2^-198.8` | `< 2^-182.3` (`2^-183.0` for `L = 1`, `2^-182.4` for `L = 10`) |
+| Tail bounds (Lemma 8, resp. Lemma 13: `(l(E+1)+1) e^-tau`) | `2^-171` | `< 2^-171.0` (about `2^-171.03`) |
+| Rejection (`e^{-r^2/2}/M` per step; one, resp. two steps) | `< 2^-173.7` (about `2^-173.77`) | `< 2^-171.9` (about `2^-171.98`) |
+| Mask samplers | `< 2^-198.7` (about `2^-198.77`) | `< 2^-182.3` (about `2^-183.04` for `L = 1` and `2^-182.36` for `L = 10`) |
 | Freshness of the hashed first messages, programming | `< 2^-26000` | `2^-192` (salt, `q_G <= 2^64`, 256-bit salts) |
 | Cap of the Bernoulli counter | `< 2^-(2^23)` | `< 2^-(2^23)` |
 | **Sum** | **`< 2^-170.7`** | **`< 2^-170.3`** |
