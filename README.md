@@ -57,6 +57,11 @@ Linux / macOS:
 Both write a dated folder under `results/` with the machine description, test logs, the ballot
 rejection experiment and `bench.csv`. Every CSV row records CPU, compiler, flags, commit and seed.
 
+The exact commands behind the numbers of the paper (`results/linux_cloud/` and
+`results/params_chain_signed.*`) are in `scripts/reproduce_paper.sh`. `scripts/compare_chain.py`
+compares two runs of the parameter chain and prints the largest change of every bound in bits,
+e.g. between the versions of `results/params_chain_signed.jsonl` in two commits.
+
 Individual programs:
 
 | Program | What it does |
@@ -106,9 +111,9 @@ Chosen by `tools/chain.py` (signed second challenge, seed-derived share randomne
 
 | N_V | d | q | beta_SIS | M-LWE (hiding) | M-SIS (binding) | Ballot, yes/no | Ballot, 1 of 2 | Authority, per ballot |
 |---|---|---|---|---|---|---|---|---|
-| 10^4 | 7 | 2^42 - 143 | 2^41.2 | 2^138.4 | 2^147.6 | 107.7 KiB | 135.7 KiB | 27.9 KiB |
-| 10^5 | 7 | 2^43 - 175 | 2^42.5 | 2^135.0 | 2^140.9 | 109.0 KiB | 137.1 KiB | 27.9 KiB |
-| 10^6 | 7 | 2^45 - 591 | 2^44.1 | 2^128.9 | 2^137.1 | 111.5 KiB | 140.0 KiB | 29.5 KiB |
+| 10^4 | 7 | 2^42 - 143 | 2^41.6 | 2^138.4 | 2^144.5 | 108.9 KiB | 138.0 KiB | 28.2 KiB |
+| 10^5 | 7 | 2^43 - 175 | 2^42.9 | 2^135.0 | 2^138.2 | 110.1 KiB | 139.4 KiB | 28.3 KiB |
+| 10^6 | 7 | 2^45 - 591 | 2^44.5 | 2^128.9 | 2^134.6 | 112.6 KiB | 142.3 KiB | 29.7 KiB |
 
 `q` is the largest prime `q = 17 (mod 32)` below `2^b`, for the smallest `b` with `q > beta_SIS` and both
 estimates at least `2^128`, so that elements of `Z_q` take exactly `b` bits.

@@ -21,4 +21,4 @@ L1d cache:                               96 KiB (2 instances)
 L1i cache:                               64 KiB (2 instances)
 cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
                total        used        free      shared  buff/cache   available
-Mem:               7           0           7           0           0           7
+Mem:               7           0           6           0           1           7

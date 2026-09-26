@@ -86,7 +86,7 @@ def main(folder):
         for r in csv.DictReader(open(rej)):
             out.append(f"| {r['n']} | {r['L']} | {float(r['log2_sigma_J']):.2f} | {r['ballots']} | {float(r['attempts_mean']):.2f} ± {float(r['attempts_ci95']):.2f} | "
                        f"{float(r['max_shift_over_T']):.2f} | {r['verified']} | {float(r['gof_p']):.3f} | {float(r['indep_p']):.3f} |")
-        out.append("\nExpected attempts: M = 2.99 for every L.")
+        out.append("\nExpected attempts: M = exp(43669/39762) = 3.00 for every L.")
         reps = sorted(glob.glob(os.path.join(folder, "replications", "*", "ballot_rej_summary.csv")))
         g, ind = [], []
         for f in [rej] + reps:

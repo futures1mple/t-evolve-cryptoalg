@@ -15,7 +15,7 @@
   plan target=8.9e+06: levels=2 a=(47,685) b=(7,257) sigma_out/target=1.00000
   plan target=3e+07: levels=2 a=(38,2513) b=(27,68) sigma_out/target=1.00000
   plan target=9.1e+07: levels=2 a=(62,4623) b=(45,397) sigma_out/target=1.00000
-  plan target=2e+08: levels=2 a=(76,5563) b=(69,5194) sigma_out/target=1.00000
+  plan target=1.8e+08: levels=2 a=(64,5793) b=(63,5267) sigma_out/target=1.00000
   gauss target=1 sigma_out=1.000 levels=-1: n=4000000 var/sigma^2=1.0002 chi2=6.1 dof=10
   gauss target=256 sigma_out=256.000 levels=0: n=2000000 var/sigma^2=0.9996 chi2=29.2 dof=34
   gauss target=1000 sigma_out=1055.515 levels=1: n=2000000 var/sigma^2=1.0005 chi2=32.8 dof=36
