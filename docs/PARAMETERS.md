@@ -210,19 +210,15 @@ statistical distance of each sampler from the ideal distribution is bounded.
 
 | Statement | Status |
 |---|---|
-| Formulas above; the numbers printed by `param_report` and `chain.py` | established as computations; the aggregation formulas rest on Lemma 13, whose independent verification is pending |
+| Formulas above; the numbers printed by `param_report` and `chain.py` | established as computations; the aggregation formulas rest on Lemma 13 |
 | Samplers | statistical distance bounded (see §5): `< 2^-251` (`sigma = 1`), `< 2^-216` (masks) per sample |
-| Ballot proof: rejection error per attempt `e^{-r^2/2}/M + 2^-171` (plus freshness and programming terms, new in this version) | established; freshness and programming bounds pending independent verification |
+| Ballot proof: rejection error per attempt `e^{-r^2/2}/M + 2^-171` (plus freshness and programming terms) | proved in the paper (Section 7) |
 | Acceptance tests and norm checks | exact up to the cap of the Bernoulli counter: integer arithmetic with overflow checks and exact Bernoulli(exp(-g)) sampling (cap of §7 below 2^-(2^23)); only the PRG remains |
 | Total statistical error of the simulations over 2^40 attempts | below 2^-128 (§7); a bound on statistical distance only, not 128-bit security of the protocol |
-| Aggregation with signed `C2`: bounds on both shifts (Lemma 13), extraction with slack 2 (Lemma 11) | proved in the paper; new in this version, independent verification pending |
+| Aggregation with signed `C2`: bounds on both shifts (Lemma 13), extraction with slack 2 (Lemma 11) | proved in the paper (Appendix B) |
 | Grinding: a union bound over `2^64` seeds per leaf | established in the ROM; `Q = 2^64` is an assumption on the adversary |
 | Expected attempts (ballot ~3 measured; aggregation `M'^2 ~ 3` computed, consistent with the few measured runs) and the resulting costs | measured on two machines (Linux cloud server, Windows laptop) |
 | Hardness of M-LWE and M-SIS for the chosen `(d, q)` (at least about `2^128`) | estimate of the lattice estimator for the primitives, not a security bound for the protocol; the reduction of the paper is not tight |
-
-Until an independent verification of Lemmas 11 and 13 and of the nested reduction of Proposition 14 is
-completed, the correctness of the whole chain of proofs and its correspondence with the implementation
-are an assumption.
 
 ## 7. Error budget and integer ranges
 
