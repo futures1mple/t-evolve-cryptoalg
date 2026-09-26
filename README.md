@@ -57,6 +57,9 @@ Linux / macOS:
 Both write a dated folder under `results/` with the machine description, test logs, the ballot
 rejection experiment and `bench.csv`. Every CSV row records CPU, compiler, flags, commit and seed.
 
+Scaling measurements (ballots for `n` up to 15 and `L` up to 10, aggregation up to `N_V = 10^5`),
+Windows: `scripts\run_windows_scaling.bat [ballots | agg | big]` (about 3.5-4 hours in total).
+
 The exact commands behind the numbers of the paper (`results/linux_cloud/` and
 `results/params_chain_signed.*`) are in `scripts/reproduce_paper.sh`. `scripts/compare_chain.py`
 compares two runs of the parameter chain and prints the largest change of every bound in bits,
@@ -70,6 +73,7 @@ Individual programs:
 | `build/test_protocol [-q]` | ballots (completeness, encoding round trip, 9 kinds of tampering rejected), share checks, interpolation, EVOLVE ballots, a complete aggregation and tally with tampering tests |
 | `build/exp_ballot_rej [ballots] [seed] [outdir]` | experiment on the ballot proof: independent ballots, `sigma_J` fixed in advance, full proof and verification after encoding; attempts, `‖shift‖/T`, goodness-of-fit of the accepted responses to `D_{sigma_J}`, and a two-sample test of witness independence (real vs. simulated OR branch) |
 | `build/bench_protocol [-nv N] [-reps R] [-d d -q q] [-out f.csv] [-skip-agg / -only-agg]` | micro benchmarks, ballots of T-EVOLVE (yes/no, 1-of-2, n=5) and EVOLVE, and a complete tally of `N` ballots by all authorities, with repeated rounds until `t` succeed |
+| `build/bench_protocol -ballot n,t,L,w [...]` / `-only-agg -seq -nv N` | only the listed ballots (`w = -1`: free weight); aggregation in a low-memory mode that processes the `t` authorities of the quorum one after another (about 11 GB for `N = 10^5`) |
 | `build/param_report NV n t L w d q mode logQ` | every quantity of the parameter chain as JSON |
 | `tools/chain.py` | search of `(d, q)` with the lattice estimator (needs SageMath and the estimator, commit 53da598) |
 

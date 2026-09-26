@@ -1,6 +1,9 @@
 /* Benchmarks of T-EVOLVE and EVOLVE on the same core (single thread).
  *
- *   bench_protocol [-nv N_V] [-reps R] [-seed S] [-d d] [-q q] [-out file.csv] [-skip-agg]
+ *   bench_protocol [-nv N_V] [-reps R] [-seed S] [-d d] [-q q] [-out file.csv] [-skip-agg] [-only-agg]
+ *                  [-seq] [-ballot n,t,L,w ...]
+ *   -ballot n,t,L,w  (repeatable) benchmark only these T-EVOLVE ballots (w = -1: free weight)
+ *   -seq             low-memory aggregation: the t authorities one after another (for N_V = 10^5)
  *
  * Measures, with medians and interquartile ranges over R repetitions:
  *   micro      NTT, product in R_q, matrix-vector product, Gaussian samplers, SHAKE256;
@@ -312,9 +315,131 @@ static void bench_agg(int NV, int n, int t, int d, uint64_t q, c2_mode mode) {
     tv_pub_free(&pub);
 }
 
+/* Low-memory variant for large N_V (option -seq): the authorities of one quorum T = {1..t} are
+ * processed one after another, and the leaf randomness of an authority is freed as soon as its
+ * tree is built. Peak memory is that of one authority (about 11 GB for N_V = 10^5, 5.5 GB for 5*10^4). The timings of
+ * each authority are those of the normal run; the only difference is that BB_1 is hashed over the
+ * round-1 message of this authority alone, which does not change the amount of work. A round that
+ * finds no non-aborting attempt is repeated for this authority (its leaves are regenerated
+ * outside the timings). */
+static void gen_leaves_for(int k, int NV, const tv_params *prm, const tv_pub *pub, const uint8_t s[32],
+                           poly *lc, poly *lm, int64_t *lr, long *expect) {
+    size_t vn = (size_t)prm->mu * TV_N;
+    prg g;
+    prg_init(&g, 6, s, 32);
+    long e = 0;
+    for (int i = 0; i < NV; i++) {
+        tv_voter_secret sec;
+        tv_secret_alloc(&sec, prm);
+        poly v;
+        poly_zero(&v);
+        v.c[0] = (uint64_t)(i % 3 == 0);
+        e += (long)v.c[0];
+        shamir_share(sec.m, &v, prm, &g);
+        for (int j = 1; j <= prm->n; j++) {
+            uint8_t sd[32];
+            prg_bytes(&g, sd, 32);
+            if (j != k) continue;
+            tv_rand_from_seed(lr + (size_t)i * vn, pub, (uint64_t)i, k, sd);
+            lm[i] = sec.m[k];
+            tv_commit(lc + (size_t)i * prm->rows, pub, &lm[i], lr + (size_t)i * vn);
+        }
+        tv_secret_free(&sec);
+    }
+    if (expect) *expect = e;
+}
+
+static void bench_agg_seq(int NV, int n, int t, int d, uint64_t q, c2_mode mode) {
+    tv_params prm;
+    tv_params_init(&prm, n, t, 1, TV_W_FREE, d, q);
+    uint8_t s[32];
+    seed_from(s, g_seed, 41);
+    tv_pub pub;
+    tv_pub_init(&pub, &prm, s);
+    char cfg[128];
+    snprintf(cfg, sizeof cfg, "NV=%d n=%d t=%d L=1 d=%d log2q=%.1f C2=%s seq", NV, n, t, d, log2((double)RING.q), mode == C2_SIGNED ? "signed" : "binary");
+    size_t vn = (size_t)prm.mu * TV_N;
+    agg_params ap;
+    agg_params_init(&ap, &prm, NV, mode, 64);
+    agg_params_print(&ap, &prm);
+    {   /* peak: leaf commitments + tree, plus the larger of (leaf randomness) and (responses Z1 + the copy made by VerAgg) */
+        double pc = (double)prm.rows * sizeof(poly), tree = (double)ap.nnodes * (pc + sizeof(poly) + vn);
+        double a1 = (double)NV * (vn * 8 + sizeof(poly) + pc);                                     /* round 1: leaves */
+        double a2 = (double)NV * vn * 8 + (double)ap.E * vn * ap.ell * 8 + (double)ap.nnodes * pc; /* round 2 + VerAgg: Z1, Z2, copy */
+        printf("sequential mode: %d authorities one after another, peak memory about %.1f GB\n", t, (tree + (a1 > a2 ? a1 : a2)) / 1e9);
+    }
+    poly *V = calloc((size_t)t, sizeof(poly));
+    const poly *Vp[16];
+    int T[16];
+    double r1ms = 0, r2ms = 0, vms = 0, att_total = 0;
+    size_t by1 = 0, by2 = 0;
+    int rounds_total = 0, allok = 1;
+    long expect = 0;
+    for (int k = 1; k <= t; k++) {
+        int done = 0;
+        for (int r = 1; r <= 20 && !done; r++) {
+            poly *lc = malloc(sizeof(poly) * (size_t)NV * prm.rows), *lm = malloc(sizeof(poly) * (size_t)NV);
+            int64_t *lr = malloc(sizeof(int64_t) * (size_t)NV * vn);
+            if (!lc || !lm || !lr) { fprintf(stderr, "out of memory (N_V = %d)\n", NV); exit(1); }
+            gen_leaves_for(k, NV, &prm, &pub, s, lc, lm, lr, &expect);
+            agg_state st;
+            agg_contrib c;
+            memset(&st, 0, sizeof st);
+            memset(&c, 0, sizeof c);
+            uint8_t as[32];
+            seed_from(as, g_seed, 5000 + (unsigned)(k + 100 * r));
+            agg_stats sa;
+            agg_round1(&st, &c, &sa, &pub, &ap, k, lc, lm, lr, NV, as);
+            free(lr); free(lm); free(lc);   /* the tree keeps its own copy of the leaves */
+            r1ms += sa.t_round1_ms;
+            by1 += sa.bytes_round1;
+            rounds_total++;
+            uint8_t bb1[TV_HASHBYTES];
+            agg_bb1_digest(bb1, &pub, &c, 1);
+            done = agg_round2(&st, &c, &sa, &pub, &ap, bb1) == 0;
+            r2ms += sa.t_round2_ms;
+            att_total += sa.attempts_used;
+            if (done) {
+                by2 += sa.bytes_round2;
+                double t0 = now_ms();
+                allok &= agg_verify(&pub, &ap, &c, st.tree.com, NV, bb1);   /* leaves come first in the tree */
+                vms += now_ms() - t0;
+                V[k - 1] = c.V[0];
+                T[k - 1] = k;
+                Vp[k - 1] = &V[k - 1];
+            }
+            printf("  authority %d, round %d: %s\n", k, r, done ? "ok" : "no non-aborting attempt, repeated");
+            agg_state_free(&st);
+            agg_contrib_free(&c);
+        }
+        allok &= done;
+    }
+    long cnt[1];
+    double t0 = now_ms();
+    allok &= tv_combine(cnt, &pub, T, Vp, NV) == 0 && cnt[0] == expect;
+    double combine_ms = now_ms() - t0;
+    row1("agg", "blocks E", cfg, ap.E, "count");
+    row1("agg", "rounds per authority (mean)", cfg, (double)rounds_total / t, "count");
+    row1("agg", "round 1 per authority per round", cfg, r1ms / rounds_total / 1000, "s");
+    row1("agg", "round 2 per authority per round", cfg, r2ms / rounds_total / 1000, "s");
+    row1("agg", "round 2 per attempt", cfg, r2ms / att_total / 1000, "s");
+    row1("agg", "round 1 per block per attempt", cfg, r1ms / rounds_total / ap.kappa / ap.E / 1000, "s");
+    row1("agg", "round 2 per block per attempt", cfg, r2ms / att_total / ap.E / 1000, "s");
+    row1("agg", "VerAgg per authority", cfg, vms / t / 1000, "s");
+    row1("agg", "VerAgg per block", cfg, vms / t / ap.E / 1000, "s");
+    row1("agg", "Combine", cfg, combine_ms, "ms");
+    row1("agg", "published round 1 per authority per round", cfg, (double)by1 / rounds_total / 1024, "KiB");
+    row1("agg", "published round 2 per successful authority", cfg, (double)by2 / t / 1024, "KiB");
+    row1("agg", "published per ballot per authority", cfg, ((double)by1 / rounds_total + (double)by2 / t) / NV / 1024, "KiB");
+    row1("agg", "tally correct and all VerAgg ok", cfg, allok, "bool");
+    free(V);
+    tv_pub_free(&pub);
+}
+
 int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
-    int NV = 1000, reps = 30, d = 7, skip_agg = 0, only_agg = 0;
+    int NV = 1000, reps = 30, d = 7, skip_agg = 0, only_agg = 0, seq = 0, nb = 0;
+    int bcfg[16][4];
     uint64_t q = 4398046510961ULL;    /* 2^42 - 143: the set chosen by tools/chain.py for N_V = 10^4 */
     const char *out = "results/bench.csv";
     for (int i = 1; i < argc; i++) {
@@ -326,6 +451,13 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "-out") && i + 1 < argc) out = argv[++i];
         else if (!strcmp(argv[i], "-skip-agg")) skip_agg = 1;
         else if (!strcmp(argv[i], "-only-agg")) only_agg = 1;
+        else if (!strcmp(argv[i], "-seq")) seq = 1;
+        else if (!strcmp(argv[i], "-ballot") && i + 1 < argc && nb < 16) {
+            /* -ballot n,t,L,w (w = -1: no weight constraint); only these ballots, no micro and no EVOLVE */
+            int *b = bcfg[nb];
+            if (sscanf(argv[++i], "%d,%d,%d,%d", &b[0], &b[1], &b[2], &b[3]) != 4 || b[2] > 16) { fprintf(stderr, "bad -ballot %s\n", argv[i]); return 1; }
+            nb++;
+        }
     }
     detect_cpu();
     csv = fopen(out, "a");
@@ -333,7 +465,13 @@ int main(int argc, char **argv) {
     fseek(csv, 0, SEEK_END);
     if (ftell(csv) == 0) fprintf(csv, "group,name,config,median,q1,q3,min,reps,unit,cpu,compiler,flags,commit,seed\n");
     printf("T-EVOLVE benchmarks | cpu: %s | compiler: %s | flags: %s | commit: %s | seed: %llu\n", cpu_name, __VERSION__, BUILD_FLAGS, GIT_COMMIT, g_seed);
-    if (!only_agg) {
+    if (!only_agg && nb > 0) {
+        for (int j = 0; j < nb; j++) {
+            tv_params prm;
+            if (tv_params_init(&prm, bcfg[j][0], bcfg[j][1], bcfg[j][2], bcfg[j][3], d, q)) { fprintf(stderr, "bad parameters for -ballot %d\n", j + 1); return 1; }
+            bench_tballot(bcfg[j][0], bcfg[j][1], bcfg[j][2], bcfg[j][3], d, q, reps);
+        }
+    } else if (!only_agg) {
         tv_params prm;
         if (tv_params_init(&prm, 4, 3, 1, TV_W_FREE, d, q)) { fprintf(stderr, "bad q\n"); return 1; }
         uint8_t s[32];
@@ -347,7 +485,10 @@ int main(int argc, char **argv) {
         bench_tballot(5, 3, 1, TV_W_FREE, d, q, reps);
         bench_eballot(4, d, q, reps);
     }
-    if (!skip_agg) bench_agg(NV, 4, 3, d, q, C2_SIGNED);
+    if (!skip_agg && nb == 0) {
+        if (seq) bench_agg_seq(NV, 4, 3, d, q, C2_SIGNED);
+        else bench_agg(NV, 4, 3, d, q, C2_SIGNED);
+    }
     fclose(csv);
     return 0;
 }
