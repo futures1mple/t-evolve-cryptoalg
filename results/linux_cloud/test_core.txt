@@ -1,3 +1,10 @@
+  bern_exp g=0: 1.00000 (exp(-g) = 1.00000)
+  bern_exp g=0.3: 0.74140 (exp(-g) = 0.74082)
+  bern_exp g=1: 0.36741 (exp(-g) = 0.36788)
+  bern_exp g=2.7: 0.06690 (exp(-g) = 0.06721)
+  bern_exp g=5: 0.00673 (exp(-g) = 0.00674)
+  bern_exp g=1.23457: 0.29016 (exp(-g) = 0.29096)
+  reject_accept: 0.22428 (expected 0.22424)
   plan target=300: levels=1 a=(1,0) b=(1,0) sigma_out/target=1.20680
   plan target=1000: levels=1 a=(4,0) b=(1,0) sigma_out/target=1.05552
   plan target=25113.9: levels=2 a=(1,67) b=(1,18) sigma_out/target=1.00011

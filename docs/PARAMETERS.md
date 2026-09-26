@@ -116,10 +116,10 @@ values this costs at most 0.003 bit in `sigma1`, `sigma2` and `beta_SIS`.
 
 **Rejection.** `sigma_i` is the smallest achievable value `>= alpha' T_i` with the rational
 `alpha' = 437/20 = 21.85` (close to `12 / ln sqrt(3) = 21.846`), and `M' = exp(12/alpha' + 1/(2 alpha'^2))`,
-`ln M' = 105080/190969` exactly (`M' = 1.7335`). Each of the two steps is applied once per attempt to
+`ln M' = 105080/190969` exactly (`M' = 1.7337`). Each of the two steps is applied once per attempt to
 the concatenation over all `E` blocks, with the exact test described for the ballot proof. An attempt
 succeeds with probability about `1/M'^2 = 0.333`, independently of `E`; the simulation error per
-attempt is at most `2 * 2^-100 / M' + (2l+1) e^-tau + eps_fresh` (Lemma 13 of the paper). The norm
+attempt is at most `2 * 2^-100 / M' + (l(E+1)+1) e^-tau + eps_fresh` (Lemma 13 of the paper). The norm
 checks of every block (`IsSmall`) are exact integer comparisons: rows of `Z1` with
 `||.||^2 <= 2 k sigma1^2`; entries of `Z2` with `z^2 <= 81 sigma2^2`; each ring component of each
 column of `Z2` with `||.||^2 <= 2 N sigma2^2`.
