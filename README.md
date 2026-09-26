@@ -20,14 +20,14 @@ encryption of the seeds is a placeholder (see *Scope*). Do not use it to run ele
 | Part | Files | Paper |
 |---|---|---|
 | SHAKE128/256 (FIPS 202) | `src/keccak.c` | — |
-| `R_q = Z_q[X]/(X^256+1)`, `q = 17 mod 32` prime `< 2^50`, 3-level partial NTT, Montgomery arithmetic | `src/ring.c` | §6, choice of `q` |
-| Discrete Gaussian samplers with bounded error (256-bit tables, convolution), exact rejection with overflow-checked integer arithmetic, challenges, EVOLVE's permutation challenges | `src/sample.c` | §3 |
-| BDLOP commitments (multi-message form), Shamir sharing, Reed–Solomon parity checks, Lagrange | `src/bdlop.c`, `src/shamir.c` | §3 |
-| Ballot with the EVOLVE-style ballot proof, one joint rejection step, OR-proofs, weight proof; seed-derived share randomness | `src/ballot.c` | §4 (Fig. 2), §6 |
-| Authority aggregation: recommitment tree, `Pi_open` and `Pi_zero` after Baum–Lyubashevsky 2017 with one joint rejection per stage over all blocks, `kappa` attempts committed by `G(W, salt)`, announce-then-reveal | `src/agg.c` | §6 |
-| Combine / Verify (interpolation at 0) | `src/tally.c` | §4 |
-| EVOLVE ballot (additive shares, OR-proof on the sum) on the same core | `src/evolve.c` | §7 (comparison) |
-| Encoding (packed `Z_q`, Golomb–Rice for Gaussian vectors) — sizes are those of real encodings | `src/codec.c` | Tables 1–2 |
+| `R_q = Z_q[X]/(X^256+1)`, `q = 17 mod 32` prime `< 2^50`, 3-level partial NTT, Montgomery arithmetic | `src/ring.c` | §7, choice of `q` |
+| Discrete Gaussian samplers with bounded error (256-bit tables, convolution), exact rejection (up to a capped counter, deviation below 2^-(2^23) per call) with overflow-checked integer arithmetic, challenges, EVOLVE's permutation challenges | `src/sample.c` | §8 (samplers, rejection), §7 |
+| BDLOP commitments (multi-message form), Shamir sharing, Reed–Solomon parity checks, Lagrange | `src/bdlop.c`, `src/shamir.c` | §3, §5 |
+| Ballot with the EVOLVE-style ballot proof, one joint rejection step, OR-proofs, weight proof; seed-derived share randomness | `src/ballot.c` | §5 (Fig. 2), §7 |
+| Authority aggregation: recommitment tree, `Pi_open` and `Pi_zero` after Baum–Lyubashevsky 2017 with one joint rejection per stage over all blocks, `kappa` attempts committed by `G(W, salt)`, announce-then-reveal | `src/agg.c` | §7 |
+| Combine / Verify (interpolation at 0) | `src/tally.c` | §5 |
+| EVOLVE ballot (additive shares, OR-proof on the sum) on the same core | `src/evolve.c` | §8, §9 (comparison) |
+| Encoding (packed `Z_q`, Golomb–Rice for Gaussian vectors) — sizes are those of real encodings | `src/codec.c` | Tables 1, 3 |
 
 ## Build
 
@@ -116,7 +116,13 @@ Chosen by `tools/chain.py` (signed second challenge, seed-derived share randomne
 | 10^6 | 7 | 2^45 - 591 | 2^44.5 | 2^128.9 | 2^134.6 | 112.6 KiB | 142.3 KiB | 29.7 KiB |
 
 `q` is the largest prime `q = 17 (mod 32)` below `2^b`, for the smallest `b` with `q > beta_SIS` and both
-estimates at least `2^128`, so that elements of `Z_q` take exactly `b` bits.
+estimates at least `2^128`, so that elements of `Z_q` take exactly `b` bits. All entries are computed, not
+measured; the estimates are rounded to one decimal and are not lower bounds (for one of two candidates the
+binding estimates are `2^144.0`, `2^137.6` and `2^134.0`). They concern the primitives, not the security of
+the protocol.
+
+Measurements: `results/linux_cloud/` (cloud server, Linux; commit 996646f) and `results/windows/20260926_1300/`
+(laptop, Windows 11; commit 1d97995), both built from commit d03fd81.
 
 Sizes are those of the encoding in `src/codec.c` (for N_V = 10^4 they coincide with the measured encodings); the
 seed ciphertexts are counted with their 32-byte payload only. The benchmarks use the set for

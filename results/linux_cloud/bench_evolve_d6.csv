@@ -1,0 +1,36 @@
+group,name,config,median,q1,q3,min,reps,unit,cpu,compiler,flags,commit,seed
+micro,ntt_forward,log2q=36.0 d=6 mu=13,3.359705,3.307875,3.437570,3.250070,10,us,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+micro,product_ntt_domain,log2q=36.0 d=6 mu=13,8.455705,8.035940,28.015280,7.987985,10,us,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+micro,commitment (C r + m),log2q=36.0 d=6 mu=13,745.163000,726.454000,896.526000,704.292000,10,us,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+micro,gauss_vector sigma=1 (mu*N),log2q=36.0 d=6 mu=13,121.336000,117.592000,124.655000,116.031000,10,us,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+micro,gauss_vector sigma_J (mu*N),log2q=36.0 d=6 mu=13,435.429000,425.419000,441.409000,419.457000,10,us,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+micro,shake256_1KiB,log2q=36.0 d=6 mu=13,6.237875,6.184400,6.292530,6.103575,10,us,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,vote (incl. all attempts),T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,32.912131,19.838615,63.124374,14.127546,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,decode+verify,T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,7.483159,7.345854,7.583207,6.918389,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,check_share (one authority),T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,0.945158,0.900491,1.011795,0.866049,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,attempts (mean),T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,3.400000,3.400000,3.400000,3.400000,1,count,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,ballot size,T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,88.128906,88.120117,88.145508,88.115234,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,  of which proof,T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,48.621094,48.612305,48.637695,48.607422,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,  of which commitments,T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,39.375000,39.375000,39.375000,39.375000,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,all verified,T-EVOLVE n=4 t=3 L=1 w=-1 d=6 log2q=36.0,1.000000,1.000000,1.000000,1.000000,1,bool,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,vote (incl. all attempts),T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,36.332966,32.439670,51.852593,18.846786,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,decode+verify,T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,10.371687,10.074461,10.602537,9.794125,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,check_share (one authority),T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,1.183185,1.098458,1.231777,1.086861,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,attempts (mean),T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,3.000000,3.000000,3.000000,3.000000,1,count,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,ballot size,T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,114.041016,114.026367,114.046875,114.012695,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,  of which proof,T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,68.908203,68.893555,68.914062,68.879883,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,  of which commitments,T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,45.000000,45.000000,45.000000,45.000000,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,all verified,T-EVOLVE n=4 t=3 L=2 w=1 d=6 log2q=36.0,1.000000,1.000000,1.000000,1.000000,1,bool,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,vote (incl. all attempts),T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,27.210013,16.552204,49.994880,16.217493,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,decode+verify,T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,8.460073,8.248291,8.737797,8.141716,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,check_share (one authority),T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,0.945031,0.922012,1.080022,0.904411,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,attempts (mean),T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,3.800000,3.800000,3.800000,3.800000,1,count,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,ballot size,T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,103.159180,103.134766,103.164062,103.104492,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,  of which proof,T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,55.745117,55.720703,55.750000,55.690430,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,  of which commitments,T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,47.250000,47.250000,47.250000,47.250000,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,all verified,T-EVOLVE n=5 t=3 L=1 w=-1 d=6 log2q=36.0,1.000000,1.000000,1.000000,1.000000,1,bool,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,vote (incl. all attempts),EVOLVE n=4 L=1 d=6 log2q=36.0,12.025727,6.432196,14.796480,6.235010,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,verify,EVOLVE n=4 L=1 d=6 log2q=36.0,2.107466,2.064195,2.147510,1.956589,10,ms,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,attempts (mean),EVOLVE n=4 L=1 d=6 log2q=36.0,3.000000,3.000000,3.000000,3.000000,1,count,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,ballot size,EVOLVE n=4 L=1 d=6 log2q=36.0,45.904297,45.895508,45.906250,45.889648,10,KiB,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1
+ballot,all verified,EVOLVE n=4 L=1 d=6 log2q=36.0,1.000000,1.000000,1.000000,1.000000,1,bool,Intel(R) Xeon(R) Processor @ 2.10GHz,13.3.0,cc -O3 -march=native,d03fd81,1

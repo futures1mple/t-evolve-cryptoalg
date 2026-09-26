@@ -21,7 +21,7 @@ each rejection step has error at most `e^{-r^2/2} < 2^-172` with `r = 309/20`.
 * **Quadratic forms.** If `x` has independent sigma-subgaussian coordinates and `Phi` is fixed,
   then with `Sigma = Phi^T Phi`
   `Pr[ ||Phi x||^2 > sigma^2 (tr Sigma + 2 sqrt(tr(Sigma^2) tau) + 2 ||Sigma|| tau) ] <= e^-tau`
-  [Hsu, Kakade, Zhang 2012, Thm. 1]. We use `tr(Sigma^2) <= ||Sigma|| tr Sigma`. This is `hkz()` in
+  [Hsu, Kakade, Zhang 2012, Thm. 2.1 of the published version]. We use `tr(Sigma^2) <= ||Sigma|| tr Sigma`. This is `hkz()` in
   `src/agg.c` and `shift_bound()` in `src/params.c`.
 
 Rademacher vectors (entries ±1) are 1-subgaussian, so the same bound applies to them.
@@ -44,7 +44,7 @@ blocks). Hence `||s|| <= T` except with probability `e^-tau`, with
 
 **Rejection.** `sigma_J` is the smallest value `>= alpha T` that the sampler produces (§5), with
 `alpha = 141/10`, and `M = exp(r/alpha + 1/(2 alpha^2))` with `r = 309/20`, i.e.
-`ln M = 43669/39762` exactly (`M = 2.999`). The acceptance test is exact: with the integers
+`ln M = 43669/39762` exactly (`M = 2.999`). The acceptance test is exact up to the cap of Section 7 (deviation below 2^-(2^23) per call): with the integers
 `zs = <z, s>` and `ss = ||s||^2` (128-bit arithmetic with overflow checks) and the integer
 `sigma_J^2`, the response is accepted with probability `min(1, exp((ss - 2 zs) / (2 sigma_J^2) - ln M))`,
 drawn by the algorithm of Canonne–Kamath–Steinke (Alg. 1 and Prop. 33 of arXiv:2004.00010v6:
@@ -57,10 +57,10 @@ concatenation, independently of the witness. Without the condition we add `e^-ta
 simulation error is at most `e^{-r^2/2}/M + 2^-171` plus the freshness term of the paper**, and it enters
 `epsilon_zk` of the privacy theorem once per attempt of every honest ballot.
 
-Compared with the heuristic choice `sigma_J = 11 sqrt(60 N mu (n+1+L))` used before, `T` is
-larger by a factor 1.9–2.1 (about one bit), so the rigorous choice costs about 3% of the ballot
-(6% of the proof). The measured ratio `||s|| / T` never exceeded 0.55 in 10 000 ballots
-(`results/linux_cloud/ballot_rej_summary.csv`).
+Compared with the typical norm of the shift, `sqrt(60 N mu (n+1+L)) sigma`, on which a heuristic choice
+of `sigma_J` would be based, `T` is larger by a factor 1.9–2.1 (about one bit), so the rigorous choice
+costs about 3% of the ballot (6% of the proof). The measured ratio `||s|| / T` never exceeded 0.55 in
+10 000 ballots (`results/linux_cloud/ballot_rej_summary.csv` and `results/linux_cloud/replications/`).
 
 **Response bound.** `B_J = 2 sigma_J sqrt(N mu (n + 1 + 2L))`, checked exactly as
 `||z||^2 <= B_J^2 = 4 sigma_J^2 N mu (n + 1 + 2L)` (an integer); the concatenation of all
@@ -125,7 +125,7 @@ values this costs at most 0.003 bit in `sigma1`, `sigma2` and `beta_SIS`.
 per attempt to the concatenation over all `E` blocks, with the exact test described for the ballot
 proof. An attempt succeeds with probability about `1/M'^2 = 0.333`, independently of `E`; the
 simulation error per attempt is at most `2 e^{-r^2/2}/M' + (l(E+1)+1) e^-tau + eps_fresh` with
-`tau = 187 ln 2` (Lemma 13 of the paper; `(l(E+1)+1) e^-tau <= 2^-171` for `E <= 2^11`). The norm
+`tau = 187 ln 2` (Lemma 13 of the paper; `(l(E+1)+1) e^-tau <= 2^-171` for `E <= 2142`, the largest value used, since `30 * 2143 + 1 < 2^16`; in general for `E <= 2183`). The norm
 checks of every block (`IsSmall`) are exact integer comparisons: rows of `Z1` with
 `||.||^2 <= 2 k sigma1^2`; entries of `Z2` with `z^2 <= 81 sigma2^2`; each ring component of each
 column of `Z2` with `||.||^2 <= 2 N sigma2^2`.
@@ -201,8 +201,8 @@ statistical distance of each sampler from the ideal distribution is bounded.
 * Per attempt the ballot proof draws `(n + 1 + 2L) N (2d + L)` mask coefficients (26 880 for
   `n = 4, L = 1`; 153 600 for `n = 4, L = 10`), so the sampling error is at most
   `(n + 1 + 2L) N (2d + L) 2^-216`, i.e. `2^-201.3` and `2^-198.8`. The aggregation draws
-  `E N (2d + L) (k + ell)` coefficients per attempt, at most `2^33` for `N_V = 10^6`, hence at most
-  `2^-183`. The randomness of `sigma = 1` is replaced by ideal samples in one hybrid for all at most
+  `E N (2d + L) (k + ell)` coefficients per attempt, `2^33.0` for `N_V = 10^6` and `L = 1`
+  (`2^33.6` for `L = 10`), hence at most `2^-183.0` (resp. `2^-182.4`). The randomness of `sigma = 1` is replaced by ideal samples in one hybrid for all at most
   `Q = 2^64` outputs of `X` (Lemma 13 takes a union bound over them), at most
   `Q N (2d + L) 2^-251 <= 2^-174.4` once per experiment.
 
@@ -210,15 +210,19 @@ statistical distance of each sampler from the ideal distribution is bounded.
 
 | Statement | Status |
 |---|---|
-| Formulas above; the numbers printed by `param_report` and `chain.py` | established (given the cited lemmas) |
+| Formulas above; the numbers printed by `param_report` and `chain.py` | established as computations; the aggregation formulas rest on Lemma 13, whose independent verification is pending |
 | Samplers | statistical distance bounded (see §5): `< 2^-251` (`sigma = 1`), `< 2^-216` (masks) per sample |
-| Ballot proof: rejection error per attempt `e^{-r^2/2}/M + 2^-171` | established |
-| Acceptance tests and norm checks | exact: integer arithmetic with overflow checks and exact Bernoulli(exp(-g)) sampling (cap of §7 below 2^-(2^23)); only the PRG remains |
-| Total statistical error of the simulations over 2^40 attempts | below 2^-128 (§7) |
+| Ballot proof: rejection error per attempt `e^{-r^2/2}/M + 2^-171` (plus freshness and programming terms, new in this version) | established; freshness and programming bounds pending independent verification |
+| Acceptance tests and norm checks | exact up to the cap of the Bernoulli counter: integer arithmetic with overflow checks and exact Bernoulli(exp(-g)) sampling (cap of §7 below 2^-(2^23)); only the PRG remains |
+| Total statistical error of the simulations over 2^40 attempts | below 2^-128 (§7); a bound on statistical distance only, not 128-bit security of the protocol |
 | Aggregation with signed `C2`: bounds on both shifts (Lemma 13), extraction with slack 2 (Lemma 11) | proved in the paper; new in this version, independent verification pending |
 | Grinding: a union bound over `2^64` seeds per leaf | established in the ROM; `Q = 2^64` is an assumption on the adversary |
-| Expected attempts (ballot ~3, aggregation ~3) and the resulting costs | measured; plausible for other machines |
-| 128-bit security of the chosen `(d, q)` | estimate of the lattice estimator; the reduction of the paper is not tight |
+| Expected attempts (ballot ~3 measured; aggregation `M'^2 ~ 3` computed, consistent with the few measured runs) and the resulting costs | measured on two machines (Linux cloud server, Windows laptop) |
+| Hardness of M-LWE and M-SIS for the chosen `(d, q)` (at least about `2^128`) | estimate of the lattice estimator for the primitives, not a security bound for the protocol; the reduction of the paper is not tight |
+
+Until an independent verification of Lemmas 11 and 13 and of the nested reduction of Proposition 14 is
+completed, the correctness of the whole chain of proofs and its correspondence with the implementation
+are an assumption.
 
 ## 7. Error budget and integer ranges
 
@@ -229,13 +233,14 @@ statistical distance of each sampler from the ideal distribution is bounded.
 |---|---|---|
 | Tail bounds (Lemma 8, resp. Lemma 13: `(l(E+1)+1) e^-tau`) | `2^-171` | `2^-171.0` |
 | Rejection (`e^{-r^2/2}/M` per step; one, resp. two steps) | `2^-173.8` | `2^-172.0` |
-| Mask samplers | `2^-198.8` | `2^-183.0` |
-| Freshness of the hashed first messages, programming | `< 2^-1000` | `2^-192` (salt, `q_G <= 2^64`, 256-bit salts) |
+| Mask samplers | `2^-198.8` | `< 2^-182.3` (`2^-183.0` for `L = 1`, `2^-182.4` for `L = 10`) |
+| Freshness of the hashed first messages, programming | `< 2^-26000` | `2^-192` (salt, `q_G <= 2^64`, 256-bit salts) |
 | Cap of the Bernoulli counter | `< 2^-(2^23)` | `< 2^-(2^23)` |
 | **Sum** | **`< 2^-170.7`** | **`< 2^-170.3`** |
 
 Over at most `2^40` attempts of both kinds together this is below `2^-130.3`; the hybrid for the
-`sigma = 1` randomness adds `2^-174.4` once. The total statistical error of the simulations is
+`sigma = 1` randomness adds `2^-174.4` once, and a singular block `A_1` of the commitment key (used in
+the freshness bound of the ballot proof) has probability below `2^-1300`, also once. The total statistical error of the simulations is
 therefore below `2^-128`. The computational terms (hiding, IND-CCA, EUF-CMA, M-SIS) are separate.
 
 **Integer ranges.** All acceptance decisions use integers only; every intermediate value is either

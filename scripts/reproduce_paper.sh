@@ -19,6 +19,8 @@ rm -f $O/bench.csv
 ./build/exp_ballot_rej 500 2 $O/replications/seed2 > $O/replications/seed2/stdout.txt
 ./build/exp_ballot_rej 500 3 $O/replications/seed3 > $O/replications/seed3/stdout.txt
 python3 scripts/summarize.py $O > /dev/null
+# EVOLVE's ballot at d = 6, q = 2^36 - 303 (conclusion of the paper)
+./build/bench_protocol -reps 10 -skip-agg -d 6 -q 68719476433 -out $O/bench_evolve_d6.csv > /dev/null
 wait
 # Comparison of two parameter chains (maximum change of every bound, in bits), e.g.
 #   git show 31d0dff:results/params_chain_signed.jsonl > old.jsonl

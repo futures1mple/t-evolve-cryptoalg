@@ -55,8 +55,8 @@ void gauss_vec(gauss_sampler *g, prg *p, int64_t *out, size_t n);
 /* Exact rejection sampling (integer arithmetic only, no rounding).
  * bern_exp returns 1 with probability exp(-num/den) for num >= 0, den > 0, by the algorithm of
  * Canonne, Kamath and Steinke (NeurIPS 2020, Alg. 1): Bernoulli(exp(-g)) for g in [0,1] from
- * Bernoulli(g/K) trials, and one Bernoulli(exp(-1)) trial per unit of g above 1. The only source of
- * error is the PRG. reject_accept(p, zs, ss, sigma2, cn, cd) accepts with probability
+ * Bernoulli(g/K) trials, and one Bernoulli(exp(-1)) trial per unit of g above 1. Apart from the PRG, the only
+ * deviation is the cap on the counter (TV_BERN_KMAX), below 2^-(2^23) per call. reject_accept(p, zs, ss, sigma2, cn, cd) accepts with probability
  * min(1, exp((ss - 2 zs)/(2 sigma2) - cn/cd)), the rule of Lyubashevsky with ln M = cn/cd, where
  * zs = <z, s> and ss = ||s||^2 are exact integers. */
 typedef __int128 i128;

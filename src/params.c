@@ -7,7 +7,7 @@
  *
  * The coefficients of r_j are i.i.d. D_{Z,sigma}, which is sigma-subgaussian
  * [Micciancio-Peikert 2012, Lemma 2.8]. For a fixed challenge tuple, s = Phi r is linear in r;
- * with Sigma = Phi^T Phi, the quadratic-form tail bound of Hsu, Kakade and Zhang (2012, Thm. 1)
+ * with Sigma = Phi^T Phi, the quadratic-form tail bound of Hsu, Kakade and Zhang (2012, Thm. 2.1 of the published version)
  * gives Pr[ ||s||^2 > sigma^2 (tr + 2 sqrt(tr(Sigma^2) tau) + 2 ||Sigma|| tau) ] <= e^{-tau}.
  * For challenges with 60 coefficients in {-1,1}:  tr(Sigma) = 60 N mu (n+1+L) exactly,
  * ||Sigma|| <= 60^2 (1+L) (r_0 appears in 1+L blocks, ||Rot(c)|| <= ||c||_1 = 60), and

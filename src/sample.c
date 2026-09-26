@@ -240,7 +240,7 @@ void tv_range_abort(const char *where) {
 /* 1 with probability exp(-num/den), 0 <= num <= den < 2^TV_BERN_DEN_BITS [CKS20, Alg. 1].
    The counter K of the algorithm is unbounded; it is capped at TV_BERN_KMAX, so that den * K < 2^126
    never overflows. The loop reaches the cap with probability at most prod_{j<KMAX} (num/den)/j
-   <= 1/(KMAX-1)! < 2^-(2^24), and only then can the output differ from Bernoulli(exp(-num/den)). */
+   <= 1/(KMAX-1)! < 2^-(2^23), and only then can the output differ from Bernoulli(exp(-num/den)). */
 static int bern_exp01(prg *p, u128 num, u128 den) {
     u128 K = 1;
     while (K < TV_BERN_KMAX && bern_frac(p, num, den * K)) K++;

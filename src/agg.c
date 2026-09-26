@@ -77,7 +77,7 @@ void agg_params_init(agg_params *ap, const tv_params *p, long nleaves, c2_mode m
     ap->logM = (double)ap->logM_num / (double)ap->logM_den;
     ap->zinf_mult = 9.0;
     ap->logQ = logQ;
-    ap->tau = 187.0 * log(2.0);               /* (l(E+1)+1) e^-tau <= 2^-171 per attempt for E <= 2^11 */
+    ap->tau = 187.0 * log(2.0);               /* (l(E+1)+1) e^-tau <= 2^-171 per attempt for E <= 2142 (30*2143+1 < 2^16); in general E <= 2183 */
     agg_tree t;
     agg_tree_shape(&t, (int)nleaves, ap->fanin);
     agg_block *blk;
