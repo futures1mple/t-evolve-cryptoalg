@@ -1,0 +1,84 @@
+T-EVOLVE benchmarks | cpu: Intel64 Family 6 Model 183 Stepping 1; GenuineIntel | compiler: 15.2.0 | flags: gcc_-O3_-march=native_mingw | commit: af7e386 | seed: 1
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=signed logQ=64 E=24 (open 21, zero 3) nodes=10347
+  T1=2^18.64 T2=2^18.72 sigma1=2^23.46 sigma2=2^23.54
+sequential mode: 3 authorities one after another, peak memory about 1.1 GB
+  authority 1, round 1: ok
+  authority 2, round 1: ok
+  authority 3, round 1: ok
+agg          blocks E                           NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        24.0000 count  (IQR 24.0000-24.0000, n=1)
+agg          rounds per authority (mean)        NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 count  (IQR 1.0000-1.0000, n=1)
+agg          round 1 per authority per round    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        86.6847 s      (IQR 86.6847-86.6847, n=1)
+agg          round 2 per authority per round    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        19.9301 s      (IQR 19.9301-19.9301, n=1)
+agg          round 2 per attempt                NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        11.9581 s      (IQR 11.9581-11.9581, n=1)
+agg          round 1 per block per attempt      NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.9030 s      (IQR 0.9030-0.9030, n=1)
+agg          round 2 per block per attempt      NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.4983 s      (IQR 0.4983-0.4983, n=1)
+agg          VerAgg per authority               NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        20.7270 s      (IQR 20.7270-20.7270, n=1)
+agg          VerAgg per block                   NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.8636 s      (IQR 0.8636-0.8636, n=1)
+agg          Combine                            NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.0038 ms     (IQR 0.0038-0.0038, n=1)
+agg          published round 1 per authority per round NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq      3644.9375 KiB    (IQR 3644.9375-3644.9375, n=1)
+agg          published round 2 per successful authority NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq    278046.3490 KiB    (IQR 278046.3490-278046.3490, n=1)
+agg          published per ballot per authority NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        28.1691 KiB    (IQR 28.1691-28.1691, n=1)
+agg          tally correct and all VerAgg ok    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 bool   (IQR 1.0000-1.0000, n=1)
+T-EVOLVE benchmarks | cpu: Intel64 Family 6 Model 183 Stepping 1; GenuineIntel | compiler: 15.2.0 | flags: gcc_-O3_-march=native_mingw | commit: af7e386 | seed: 2
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=signed logQ=64 E=24 (open 21, zero 3) nodes=10347
+  T1=2^18.64 T2=2^18.72 sigma1=2^23.46 sigma2=2^23.54
+sequential mode: 3 authorities one after another, peak memory about 1.1 GB
+  authority 1, round 1: ok
+  authority 2, round 1: ok
+  authority 3, round 1: ok
+agg          blocks E                           NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        24.0000 count  (IQR 24.0000-24.0000, n=1)
+agg          rounds per authority (mean)        NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 count  (IQR 1.0000-1.0000, n=1)
+agg          round 1 per authority per round    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        87.3486 s      (IQR 87.3486-87.3486, n=1)
+agg          round 2 per authority per round    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        20.3485 s      (IQR 20.3485-20.3485, n=1)
+agg          round 2 per attempt                NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        12.2091 s      (IQR 12.2091-12.2091, n=1)
+agg          round 1 per block per attempt      NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.9099 s      (IQR 0.9099-0.9099, n=1)
+agg          round 2 per block per attempt      NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.5087 s      (IQR 0.5087-0.5087, n=1)
+agg          VerAgg per authority               NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        20.7921 s      (IQR 20.7921-20.7921, n=1)
+agg          VerAgg per block                   NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.8663 s      (IQR 0.8663-0.8663, n=1)
+agg          Combine                            NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.0041 ms     (IQR 0.0041-0.0041, n=1)
+agg          published round 1 per authority per round NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq      3644.9375 KiB    (IQR 3644.9375-3644.9375, n=1)
+agg          published round 2 per successful authority NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq    278047.2803 KiB    (IQR 278047.2803-278047.2803, n=1)
+agg          published per ballot per authority NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        28.1692 KiB    (IQR 28.1692-28.1692, n=1)
+agg          tally correct and all VerAgg ok    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 bool   (IQR 1.0000-1.0000, n=1)
+T-EVOLVE benchmarks | cpu: Intel64 Family 6 Model 183 Stepping 1; GenuineIntel | compiler: 15.2.0 | flags: gcc_-O3_-march=native_mingw | commit: af7e386 | seed: 3
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=signed logQ=64 E=24 (open 21, zero 3) nodes=10347
+  T1=2^18.64 T2=2^18.72 sigma1=2^23.46 sigma2=2^23.54
+sequential mode: 3 authorities one after another, peak memory about 1.1 GB
+  authority 1, round 1: ok
+  authority 2, round 1: ok
+  authority 3, round 1: ok
+agg          blocks E                           NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        24.0000 count  (IQR 24.0000-24.0000, n=1)
+agg          rounds per authority (mean)        NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 count  (IQR 1.0000-1.0000, n=1)
+agg          round 1 per authority per round    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        87.6422 s      (IQR 87.6422-87.6422, n=1)
+agg          round 2 per authority per round    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        23.8881 s      (IQR 23.8881-23.8881, n=1)
+agg          round 2 per attempt                NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        11.9441 s      (IQR 11.9441-11.9441, n=1)
+agg          round 1 per block per attempt      NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.9129 s      (IQR 0.9129-0.9129, n=1)
+agg          round 2 per block per attempt      NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.4977 s      (IQR 0.4977-0.4977, n=1)
+agg          VerAgg per authority               NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        20.5616 s      (IQR 20.5616-20.5616, n=1)
+agg          VerAgg per block                   NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.8567 s      (IQR 0.8567-0.8567, n=1)
+agg          Combine                            NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.0039 ms     (IQR 0.0039-0.0039, n=1)
+agg          published round 1 per authority per round NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq      3644.9375 KiB    (IQR 3644.9375-3644.9375, n=1)
+agg          published round 2 per successful authority NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq    278046.2038 KiB    (IQR 278046.2038-278046.2038, n=1)
+agg          published per ballot per authority NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        28.1691 KiB    (IQR 28.1691-28.1691, n=1)
+agg          tally correct and all VerAgg ok    NV=10000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 bool   (IQR 1.0000-1.0000, n=1)
+T-EVOLVE benchmarks | cpu: Intel64 Family 6 Model 183 Stepping 1; GenuineIntel | compiler: 15.2.0 | flags: gcc_-O3_-march=native_mingw | commit: af7e386 | seed: 1
+aggregation: fanin=30 k=500 ell=517 kappa=4 C2=signed logQ=64 E=111 (open 104, zero 7) nodes=51726
+  T1=2^19.80 T2=2^19.66 sigma1=2^24.62 sigma2=2^24.47
+sequential mode: 3 authorities one after another, peak memory about 5.3 GB
+  authority 1, round 1: ok
+  authority 2, round 1: ok
+  authority 3, round 1: ok
+agg          blocks E                           NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq       111.0000 count  (IQR 111.0000-111.0000, n=1)
+agg          rounds per authority (mean)        NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 count  (IQR 1.0000-1.0000, n=1)
+agg          round 1 per authority per round    NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq       408.3401 s      (IQR 408.3401-408.3401, n=1)
+agg          round 2 per authority per round    NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        94.3756 s      (IQR 94.3756-94.3756, n=1)
+agg          round 2 per attempt                NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        56.6254 s      (IQR 56.6254-56.6254, n=1)
+agg          round 1 per block per attempt      NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.9197 s      (IQR 0.9197-0.9197, n=1)
+agg          round 2 per block per attempt      NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.5101 s      (IQR 0.5101-0.5101, n=1)
+agg          VerAgg per authority               NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        98.5658 s      (IQR 98.5658-98.5658, n=1)
+agg          VerAgg per block                   NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.8880 s      (IQR 0.8880-0.8880, n=1)
+agg          Combine                            NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         0.0040 ms     (IQR 0.0040-0.0040, n=1)
+agg          published round 1 per authority per round NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq     18124.4375 KiB    (IQR 18124.4375-18124.4375, n=1)
+agg          published round 2 per successful authority NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq   1387612.0260 KiB    (IQR 1387612.0260-1387612.0260, n=1)
+agg          published per ballot per authority NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq        28.1147 KiB    (IQR 28.1147-28.1147, n=1)
+agg          tally correct and all VerAgg ok    NV=50000 n=4 t=3 L=1 d=7 log2q=42.0 C2=signed seq         1.0000 bool   (IQR 1.0000-1.0000, n=1)

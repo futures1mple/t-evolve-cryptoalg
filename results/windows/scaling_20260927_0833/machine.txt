@@ -1,0 +1,18 @@
+
+
+Name          : Intel(R) Core(TM) i9-14900HX
+NumberOfCores : 24
+MaxClockSpeed : 2200
+
+
+
+TotalPhysicalMemoryGB: 15.6
+FreeMemoryGB: 7.8
+Power Scheme GUID: 6fecc5ae-f350-48a5-b669-b472cb895ccf  (Turbo)gcc (Rev13, Built by MSYS2 project) 15.2.0
+Copyright (C) 2025 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+
+Microsoft Windows [Version 10.0.26200.9457]
+part: all 
