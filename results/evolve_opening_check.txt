@@ -1,0 +1,29 @@
+# python3 scripts/evolve_opening_check.py 7 1   (EVOLVE, CCS 2017 parameters)
+EVOLVE parameters: n=256, q=2^31-2^7-2^5+1 (2^31.00), d=7, sigma=1.0, N_A=4, l=30
+  B_OR = 2^8.95, B'_OR = 2^23.32
+  B_Amo,1 = 2^6.95, B'_Amo,1 = 2^28.30
+  B_Amo,2 = 2^11.91, B'_Amo,2 = 2^33.25
+  consistency (3)  2 B'_OR                   <= B_r  requires B_r >= 2^24.32
+  consistency (4)  2 sqrt(60) N_A B'_Amo,1   <= B_r  requires B_r >= 2^34.25
+  consistency (7)  (l+1) B'_Amo,1            <= B_r  requires B_r >= 2^33.25
+  consistency (8)  B'_Amo,2                  <= B_r  requires B_r >= 2^33.25
+  hence B_r >= 2^34.25, and the binding bound 2 B_r = 2^35.25 exceeds q = 2^31.00
+kernel vector: A z = 0 mod q, B z != 0: True
+  ||z||_2 = 2^34.58  (expected about q sqrt(dN/12) = 2^34.61)
+  z = r - r': ||r||_2 = 2^33.58, ||r'||_2 = 2^33.58
+  both below the required B_r = 2^34.25: True  ->  two valid openings of one commitment: True
+
+# python3 scripts/evolve_opening_check.py 5 1   (module rank of del Pino's thesis, 2018; its bound B_Com >= 2^35.8 is taken from Sec. 5.5 there and is not computed here)
+EVOLVE parameters: n=256, q=2^31-2^7-2^5+1 (2^31.00), d=5, sigma=1.0, N_A=4, l=30
+  B_OR = 2^8.73, B'_OR = 2^22.87
+  B_Amo,1 = 2^6.73, B'_Amo,1 = 2^27.85
+  B_Amo,2 = 2^11.68, B'_Amo,2 = 2^32.80
+  consistency (3)  2 B'_OR                   <= B_r  requires B_r >= 2^23.87
+  consistency (4)  2 sqrt(60) N_A B'_Amo,1   <= B_r  requires B_r >= 2^33.80
+  consistency (7)  (l+1) B'_Amo,1            <= B_r  requires B_r >= 2^32.80
+  consistency (8)  B'_Amo,2                  <= B_r  requires B_r >= 2^32.80
+  hence B_r >= 2^33.80, and the binding bound 2 B_r = 2^34.80 exceeds q = 2^31.00
+kernel vector: A z = 0 mod q, B z != 0: True
+  ||z||_2 = 2^34.33  (expected about q sqrt(dN/12) = 2^34.37)
+  z = r - r': ||r||_2 = 2^33.33, ||r'||_2 = 2^33.33
+  both below the required B_r = 2^33.80: True  ->  two valid openings of one commitment: True
