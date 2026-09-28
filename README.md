@@ -10,9 +10,11 @@ computes the parameters from the actual witnesses of the proofs (`docs/PARAMETER
 
 Repository: https://github.com/futures1mple/t-evolve-cryptoalg
 
+The version described in the paper is release `v1.0` of this repository.
+
     git clone https://github.com/futures1mple/t-evolve-cryptoalg.git
 
-**This is research code.** It is not constant-time, it has not been audited, and the public-key
+**This is research code.** It is not constant-time, it has not been audited, and the
 encryption of the seeds is a placeholder (see *Scope*). Do not use it to run elections.
 
 ## What is implemented
@@ -79,19 +81,22 @@ Individual programs:
 
 ## Scope and limitations
 
-* **PKE.** The paper needs labeled IND-CCA encryption with verifiable decryption. Here the seed
+* **Encryption of the seeds.** The paper specifies an interface, encryption with publicly
+  verifiable opening (`EO`, properties (E1)-(E4) in Section 3), and shows in its Appendix D that
+  release of identity-based keys (GPV-type IBE with deterministic key extraction) satisfies it under
+  LWE in the random oracle model, asymptotically. No concrete parameters are fixed. Here the seed
   of each share is encrypted with a placeholder (`seed xor SHAKE256(key || id)`), which fixes the
-  data flow and the 32-byte payload but is not secure; the cost of a real KEM (e.g. ML-KEM, tens of
-  microseconds) is not included, as in the paper's tables. Signatures and the proofs of correct
-  decryption that authorities attach to complaints (`ProveDec`) are not implemented either. The
-  measured sizes therefore count each ciphertext as its 32-byte payload and contain no signature;
-  the paper gives an estimate with ML-KEM-768 and ML-DSA-44 separately.
+  data flow and the 32-byte payload but is not secure; the cost of a real scheme is not included,
+  as in the paper's tables. Signatures and the evidence that authorities attach to complaints are
+  not implemented either. The measured sizes therefore count each ciphertext as its 32-byte payload
+  and contain no signature; the paper gives an estimate with ML-KEM-768 and ML-DSA-44 separately.
 * **Side channels.** Nothing is constant-time (in particular the table lookups of the samplers).
   The samplers use integer arithmetic only and are platform-independent; their statistical distance
   from the ideal distributions is bounded (`docs/PARAMETERS.md`, §5).
-* **Scale.** Aggregation is measured for `N_V = 10^3` and `10^4`. For `10^5` and `10^6` the cost is
-  linear in the number of blocks `E`, and the benchmark reports per-block costs from which the paper
-  extrapolates; these numbers are marked as extrapolated.
+* **Scale.** Aggregation is measured for `N_V = 10^3` and `10^4` (reference machine) and for
+  `10^4`, `5*10^4` and `10^5` (Windows laptop, `results/windows/scaling_20260927_0833`). For `10^6`
+  the cost is linear in the number of blocks `E`, and the paper extrapolates from the per-block
+  costs measured at `10^5`; these numbers are marked as extrapolated.
 * **Single thread.** All measurements are single-threaded; the blocks of the aggregation are
   independent and would parallelize.
 

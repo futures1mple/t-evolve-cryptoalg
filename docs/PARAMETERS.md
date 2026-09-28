@@ -237,7 +237,7 @@ statistical distance of each sampler from the ideal distribution is bounded.
 Over at most `2^40` attempts of both kinds together this is below `2^-130.3`; the hybrid for the
 `sigma = 1` randomness adds `2^-174.4` once, and a singular block `A_1` of the commitment key (used in
 the freshness bound of the ballot proof) has probability below `2^-1300`, also once. The total statistical error of the simulations is
-therefore below `2^-128`. The computational terms (hiding, IND-CCA, EUF-CMA, M-SIS) are separate.
+therefore below `2^-128`. The computational terms (hiding, confidentiality of the seed encryption, EUF-CMA, M-SIS) are separate.
 
 **Integer ranges.** All acceptance decisions use integers only; every intermediate value is either
 bounded below by the table or checked at run time.

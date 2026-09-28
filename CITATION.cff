@@ -7,8 +7,8 @@ authors:
     affiliation: "Azerbaijan Technical University"
 license: MIT
 repository-code: "https://github.com/futures1mple/t-evolve-cryptoalg"
-version: "0.1.0"
-date-released: "2026-09-24"
+version: "1.0.0"
+date-released: "2026-09-28"
 preferred-citation:
   type: article
   title: "Threshold Post-Quantum E-Voting from Lattice Commitments"
