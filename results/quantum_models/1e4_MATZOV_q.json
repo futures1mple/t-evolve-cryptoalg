@@ -1,0 +1,30 @@
+{
+ "set": "1e4",
+ "model": "MATZOV_q",
+ "estimator": "53da598",
+ "lwe": {
+  "usvp": 134.3855829359058,
+  "bdd": 133.293243874428,
+  "bdd_hybrid": 133.30326920235058,
+  "bdd_mitm_hybrid": 262.8849712994959,
+  "dual": 136.44487535770662,
+  "dual_hybrid": 133.7347888848298
+ },
+ "lwe_beta": {
+  "usvp": 382,
+  "bdd": 376,
+  "bdd_hybrid": 376,
+  "bdd_mitm_hybrid": 383,
+  "dual": 386,
+  "dual_hybrid": 375
+ },
+ "hiding": 133.293243874428,
+ "sis": {
+  "lattice": 138.9170951411041
+ },
+ "sis_beta": {
+  "lattice": 400
+ },
+ "binding": 138.9170951411041,
+ "seconds": 1049
+}

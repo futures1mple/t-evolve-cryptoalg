@@ -1,0 +1,23 @@
+{
+ "set": "kyber512",
+ "model": "MATZOV_q",
+ "estimator": "53da598",
+ "lwe": {
+  "usvp": 137.9720245641722,
+  "bdd": 134.4099515009773,
+  "bdd_hybrid": 134.41377443202856,
+  "bdd_mitm_hybrid": 262.06524464236287,
+  "dual": 143.0687316848881,
+  "dual_hybrid": 135.05737378465363
+ },
+ "lwe_beta": {
+  "usvp": 406,
+  "bdd": 388,
+  "bdd_hybrid": 388,
+  "bdd_mitm_hybrid": 407,
+  "dual": 422,
+  "dual_hybrid": 390
+ },
+ "hiding": 134.4099515009773,
+ "seconds": 369
+}

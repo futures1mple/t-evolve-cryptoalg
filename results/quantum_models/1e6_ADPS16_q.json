@@ -1,0 +1,30 @@
+{
+ "set": "1e6",
+ "model": "ADPS16_q",
+ "estimator": "53da598",
+ "lwe": {
+  "usvp": 92.22,
+  "bdd": 92.59123442365836,
+  "bdd_hybrid": 92.59123442365836,
+  "bdd_mitm_hybrid": 199.87407417750143,
+  "dual": 93.28000055411201,
+  "dual_hybrid": 91.6921065454926
+ },
+ "lwe_beta": {
+  "usvp": 348,
+  "bdd": 349,
+  "bdd_hybrid": 349,
+  "bdd_mitm_hybrid": 349,
+  "dual": 352,
+  "dual_hybrid": 346
+ },
+ "hiding": 91.6921065454926,
+ "sis": {
+  "lattice": 96.46000000000001
+ },
+ "sis_beta": {
+  "lattice": 364
+ },
+ "binding": 96.46000000000001,
+ "seconds": 1044
+}

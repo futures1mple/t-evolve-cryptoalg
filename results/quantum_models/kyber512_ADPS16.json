@@ -1,0 +1,23 @@
+{
+ "set": "kyber512",
+ "model": "ADPS16",
+ "estimator": "53da598",
+ "lwe": {
+  "usvp": 118.55199999999999,
+  "bdd": 119.41337498722878,
+  "bdd_hybrid": 119.41337498722878,
+  "bdd_mitm_hybrid": 262.0651515546413,
+  "dual": 123.80800000002344,
+  "dual_hybrid": 115.50989392453226
+ },
+ "lwe_beta": {
+  "usvp": 406,
+  "bdd": 406,
+  "bdd_hybrid": 406,
+  "bdd_mitm_hybrid": 407,
+  "dual": 424,
+  "dual_hybrid": 395
+ },
+ "hiding": 115.50989392453226,
+ "seconds": 336
+}

@@ -78,6 +78,7 @@ Individual programs:
 | `build/bench_protocol -ballot n,t,L,w [...]` / `-only-agg -seq -nv N` | only the listed ballots (`w = -1`: free weight); aggregation in a low-memory mode that processes the `t` authorities of the quorum one after another (about 11 GB for `N = 10^5`) |
 | `build/param_report NV n t L w d q mode logQ` | every quantity of the parameter chain as JSON |
 | `tools/chain.py` | search of `(d, q)` with the lattice estimator (needs SageMath and the estimator, commit 53da598) |
+| `tools/quantum_models.py SET MODEL` | hardness of the chosen sets under the MATZOV model, its quantum variant (AGPS20 depth x width) and core-SVP classical / quantum, plus Kyber-512 for comparison and `d = 8` for `10^6`; results in `results/quantum_models/` |
 
 ## Scope and limitations
 
@@ -123,6 +124,8 @@ Chosen by `tools/chain.py` (signed second challenge, seed-derived share randomne
 | 10^4 | 7 | 2^42 - 143 | 2^41.6 | 2^138.4 | 2^144.5 | 108.9 KiB | 138.0 KiB | 28.2 KiB |
 | 10^5 | 7 | 2^43 - 175 | 2^42.9 | 2^135.0 | 2^138.2 | 110.1 KiB | 139.4 KiB | 28.3 KiB |
 | 10^6 | 7 | 2^45 - 591 | 2^44.5 | 2^128.9 | 2^134.6 | 112.6 KiB | 142.3 KiB | 29.7 KiB |
+
+The M-LWE and M-SIS columns are the MATZOV model (classical). Under its quantum variant the estimates are 4 to 5 bits lower (2^133.3, 2^130.3, 2^124.7 for M-LWE), under core-SVP 2^110.7, 2^107.2, 2^101.0 (classical) and 2^100.7, 2^97.5, 2^91.7 (quantum); Kyber-512 gives 2^139.7, 2^134.4, 2^115.5, 2^106.3 under the same four models. Table and JSON output: `results/quantum_models/`.
 
 `q` is the largest prime `q = 17 (mod 32)` below `2^b`, for the smallest `b` with `q > beta_SIS` and both
 estimates at least `2^128`, so that elements of `Z_q` take exactly `b` bits. All entries are computed, not
