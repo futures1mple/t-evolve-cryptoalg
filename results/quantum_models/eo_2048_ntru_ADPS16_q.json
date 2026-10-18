@@ -1,0 +1,15 @@
+{
+ "set": "eo_2048_ntru",
+ "model": "ADPS16_q",
+ "estimator": "53da598",
+ "N": 2048,
+ "q": 9123495937,
+ "attacks": {
+  "usvp": null,
+  "dsd": null,
+  "bdd": 567.365,
+  "bdd_hybrid": 567.365
+ },
+ "min": 567.365,
+ "seconds": 784
+}

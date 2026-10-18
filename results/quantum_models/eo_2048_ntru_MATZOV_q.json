@@ -1,0 +1,15 @@
+{
+ "set": "eo_2048_ntru",
+ "model": "MATZOV_q",
+ "estimator": "53da598",
+ "N": 2048,
+ "q": 9123495937,
+ "attacks": {
+  "usvp": null,
+  "dsd": null,
+  "bdd": 566.7700852417748,
+  "bdd_hybrid": 566.7700852417748
+ },
+ "min": 566.7700852417748,
+ "seconds": 785
+}
