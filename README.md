@@ -10,7 +10,7 @@ computes the parameters from the actual witnesses of the proofs (`docs/PARAMETER
 
 Repository: https://github.com/futures1mple/t-evolve-cryptoalg
 
-The version described in the paper is release `v1.0` of this repository.
+The version described in the paper is release `v1.1` of this repository. The protocol code of `v1.1` is that of `v1.0`, unchanged; `v1.1` adds the hardness estimates under further cost models and for the encryption with publicly verifiable opening (`tools/quantum_models.py`, `results/quantum_models/`). All measurements of the paper were made with `v1.0` or earlier commits named in the paper.
 
     git clone https://github.com/futures1mple/t-evolve-cryptoalg.git
 
