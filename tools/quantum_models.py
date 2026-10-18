@@ -7,12 +7,13 @@ script re-estimates the chosen sets, the same sets under the quantum variant of 
 and Schanck, ASIACRYPT 2020), and under the core-SVP model of Alkim, Ducas, Poppelmann and Schwabe
 (USENIX Security 2016), 2^(0.292 beta) classical and 2^(0.265 beta) quantum. For comparison it
 estimates the parameters of Kyber-512 (ML-KEM-512) under the same models, and the set for
-N_V = 10^6 with module rank d = 8.
+N_V = 10^6 with module rank d = 8 at the same modulus.
 
 Requires SageMath and the lattice estimator (https://github.com/malb/lattice-estimator), commit
 53da598, importable as `estimator` (or set ESTIMATOR_DIR). LWE: secret and error D_1, m = (d+L)N
 samples, L = 1; the attacks arora-gb and bkw are skipped (never the minimum for these parameters).
-SIS: Euclidean norm, m = (2d+L)N columns, beta_SIS of results/params_chain_signed.jsonl.
+SIS: Euclidean norm, m = (2d+L)N columns, beta_SIS of results/params_chain_signed.jsonl (for d = 8 from
+build/param_report 1000000 4 3 1 -1 8 35184372088241 1 64).
 
 usage: python3 tools/quantum_models.py SET MODEL > results/quantum_models/SET_MODEL.json
   SET   one of 1e4, 1e5, 1e6, 1e6_d8, kyber512
@@ -31,7 +32,7 @@ SETS = {  # d, q, beta_SIS (from results/params_chain_signed.jsonl; for d = 8 fr
     "1e4": (7, 4398046510961, 3257500000000.0),
     "1e5": (7, 8796093022033, 8326850000000.0),
     "1e6": (7, 35184372088241, 24105000000000.0),
-    "1e6_d8": (8, 35184372088241, None),
+    "1e6_d8": (8, 35184372088241, 26660200000000.0),
 }
 MODELS = {"MATZOV": RC.MATZOV, "MATZOV_q": MATZOV(nn="quantum"), "ADPS16": RC.ADPS16, "ADPS16_q": ADPS16(mode="quantum")}
 

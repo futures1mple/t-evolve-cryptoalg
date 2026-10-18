@@ -2,8 +2,6 @@
  "set": "1e6_d8",
  "model": "MATZOV_q",
  "estimator": "53da598",
- "d": 8,
- "q": 35184372088241,
  "lwe": {
   "usvp": 143.58342487654446,
   "bdd": 142.5103145882495,
@@ -12,6 +10,21 @@
   "dual": 145.96404951981182,
   "dual_hybrid": 142.86325983535528
  },
+ "lwe_beta": {
+  "usvp": 418,
+  "bdd": 413,
+  "bdd_hybrid": 413,
+  "bdd_mitm_hybrid": 419,
+  "dual": 423,
+  "dual_hybrid": 411
+ },
  "hiding": 142.5103145882495,
- "seconds": 70
+ "sis": {
+  "lattice": 148.3614598037561
+ },
+ "sis_beta": {
+  "lattice": 437
+ },
+ "binding": 148.3614598037561,
+ "seconds": 222
 }
